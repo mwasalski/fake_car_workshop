@@ -2,7 +2,7 @@
 
 ## Project Description
 
-A generator of realistic business data simulating the operations of a network of **100 car workshops and accessories shops** located across cities throughout Poland. The data covers a **5-year period (2020–2024)** and can reach **~30 GB** at full scale.
+A generator of realistic business data simulating the operations of a network of **100 car workshops and accessories shops** located across cities throughout Poland. The data covers a **7-year period (2020–2026)** and can reach **~30 GB** at full scale.
 
 The project was created for learning how to work with large datasets in **Databricks** (partitioning, Delta Lake, Z-ordering, query optimisation).
 
@@ -20,17 +20,17 @@ Python 3.9+
 
 ## Quick Start
 
-1. Open the notebook `warsztat_generator.ipynb`
+1. Open the notebook `car_workshop_generator.ipynb`
 2. In the **CONFIGURATION** cell, set the parameters:
 
 ```python
-SCALE_FACTOR = 0.01    # 0.01 = ~300 MB, 0.1 = ~3 GB, 1.0 = ~30 GB
-OUTPUT_DIR = './output_data'
+SCALE_FACTOR = 0.01        # 0.01 = ~300 MB, 0.1 = ~3 GB, 1.0 = ~30 GB
+OUTPUT_DESTINATION = 'local'   # 'local' or 'volume'
 OUTPUT_FORMAT = 'parquet'  # or 'csv'
 ```
 
 3. Run all cells (Run All)
-4. Data will appear in the `./output_data/` directory
+4. Data will appear in `./output_data/` (local) or directly in the Databricks Volume paths (volume)
 
 ---
 
@@ -93,7 +93,7 @@ dim_customers ──┼── dim_vehicles
 | `fact_work_orders` | 5M | Workshop work orders – customer, vehicle, mechanic, status, notes |
 | `fact_work_order_items` | 15M | Work order line items – services (40%) and parts (60%) with prices and VAT |
 | `fact_sales_transactions` | 30M | Retail sales transactions – receipt, payment method |
-| `fact_sales_items` | 90M | Sales line items – product, quantity, price, discount |
+| `fact_sales_items` | 168M | Sales line items – product, quantity, price, discount |
 | `fact_invoices` | 35M | VAT invoices, receipts, corrections – linked to work orders and sales |
 | `fact_payments` | 35M | Payments – cash, card, bank transfer, BLIK, leasing |
 | `fact_inventory_movements` | 50M | Inventory movements – goods receipts (GR), goods issues (GI), returns, stock counts |
@@ -237,18 +237,28 @@ df = spark.read.parquet("/Volumes/catalog/schema/volume/output_data/dim_customer
 ### Option 3: Managed Table with Delta
 
 ```sql
-CREATE TABLE car_workshop.dim_locations
-USING DELTA
-AS SELECT * FROM parquet.`dbfs:/FileStore/output_data/dim_locations/`;
+CREATE TABLE fake_car_workshop_franchise.dim.dim_locations (
+  location_id BIGINT, location_code STRING, name STRING, ...
+)
+USING DELTA;
 
-CREATE TABLE car_workshop.fact_work_orders
+INSERT INTO fake_car_workshop_franchise.dim.dim_locations
+SELECT * FROM parquet.`dbfs:/FileStore/output_data/dim_locations/`;
+
+CREATE TABLE fake_car_workshop_franchise.fact.fact_work_orders (
+  work_order_id BIGINT, work_order_code STRING, ...
+)
 USING DELTA
-PARTITIONED BY (year, month)
-AS SELECT * FROM parquet.`dbfs:/FileStore/output_data/fact_work_orders/`;
+PARTITIONED BY (year, month);
+
+INSERT INTO fake_car_workshop_franchise.fact.fact_work_orders
+SELECT * FROM parquet.`dbfs:/FileStore/output_data/fact_work_orders/`;
 
 -- Optimisation
-OPTIMIZE car_workshop.fact_work_orders ZORDER BY (location_id, customer_id);
+OPTIMIZE fake_car_workshop_franchise.fact.fact_work_orders ZORDER BY (location_id, customer_id);
 ```
+
+> Full DDL for all tables: see `databricks_create_tables_en.sql`
 
 ---
 
