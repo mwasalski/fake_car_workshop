@@ -6,11 +6,9 @@
 -- =============================================================
 
 -- =============================================================
--- DELETE
+-- DELETE FROM
 -- Removes all rows but preserves Delta history (time travel works)
 -- =============================================================
-
--- --- dim -------------------------------------------------------
 
 DELETE FROM fake_car_workshop_franchise.dim.dim_customers;
 DELETE FROM fake_car_workshop_franchise.dim.dim_employees;
@@ -66,3 +64,30 @@ TRUNCATE TABLE fake_car_workshop_franchise.fact.fact_sales_items;
 TRUNCATE TABLE fake_car_workshop_franchise.fact.fact_sales_transactions;
 TRUNCATE TABLE fake_car_workshop_franchise.fact.fact_work_order_items;
 TRUNCATE TABLE fake_car_workshop_franchise.fact.fact_work_orders;
+
+
+
+-- DROP
+DROP TABLE  fake_car_workshop_franchise.dim.dim_customers;
+DROP TABLE fake_car_workshop_franchise.dim.dim_employees;
+DROP TABLE  fake_car_workshop_franchise.dim.dim_locations;
+DROP TABLE  fake_car_workshop_franchise.dim.dim_products;
+DROP TABLE  fake_car_workshop_franchise.dim.dim_services;
+DROP TABLE  fake_car_workshop_franchise.dim.dim_suppliers;
+DROP TABLE  fake_car_workshop_franchise.dim.dim_vehicles;
+
+-- --- fact ------------------------------------------------------
+
+DROP TABLE  fake_car_workshop_franchise.fact.fact_appointments;
+DROP TABLE  fake_car_workshop_franchise.fact.fact_customer_feedback;
+DROP TABLE  fake_car_workshop_franchise.fact.fact_employee_schedules;
+DROP TABLE  fake_car_workshop_franchise.fact.fact_inventory_movements;
+DROP TABLE  fake_car_workshop_franchise.fact.fact_invoices;
+DROP TABLE  fake_car_workshop_franchise.fact.fact_loyalty_program;
+DROP TABLE  fake_car_workshop_franchise.fact.fact_payments;
+DROP TABLE  fake_car_workshop_franchise.fact.fact_purchase_order_items;
+DROP TABLE  fake_car_workshop_franchise.fact.fact_purchase_orders;
+DROP TABLE  fake_car_workshop_franchise.fact.fact_sales_items;
+DROP TABLE  fake_car_workshop_franchise.fact.fact_sales_transactions;
+DROP TABLE  fake_car_workshop_franchise.fact.fact_work_order_items;
+DROP TABLE  fake_car_workshop_franchise.fact.fact_work_orders;

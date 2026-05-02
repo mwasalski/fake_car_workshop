@@ -5,9 +5,20 @@
 --           fact (facts)
 -- =============================================================
 
+
 -- Create schemas
 CREATE SCHEMA IF NOT EXISTS fake_car_workshop_franchise.dim;
 CREATE SCHEMA IF NOT EXISTS fake_car_workshop_franchise.fact;
+
+
+CREATE VOLUME IF NOT EXISTS fake_car_workshop_franchise.dim.autoloader_checkpoints;
+CREATE VOLUME IF NOT EXISTS fake_car_workshop_franchise.fact.autoloader_checkpoints;
+
+-- ============================================================
+-- CREATE VOLUMES
+-- ============================================================
+CREATE VOLUME IF NOT EXISTS  fake_car_workshop_franchise.dim.dim_parquet_files;
+CREATE VOLUME IF NOT EXISTS  fake_car_workshop_franchise.fact.fact_parquet_files;
 
 -- =============================================================
 -- DIMENSIONS
@@ -25,14 +36,11 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.dim.dim_customers (
   phone                    STRING,
   city                     STRING,
   postal_code              STRING,
-  registration_date        TIMESTAMP,
+  registration_date        DATE,
   preferred_location_id    BIGINT,
   marketing_consent        BOOLEAN
 )
 USING DELTA;
-
-INSERT INTO fake_car_workshop_franchise.dim.dim_customers
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/dim/dim_parquet_files/dim_customers/`;
 
 -- -------------------------------------------------------------
 
@@ -51,8 +59,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.dim.dim_employees (
 )
 USING DELTA;
 
-INSERT INTO fake_car_workshop_franchise.dim.dim_employees
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/dim/dim_parquet_files/dim_employees/`;
 
 -- -------------------------------------------------------------
 
@@ -77,9 +83,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.dim.dim_locations (
 )
 USING DELTA;
 
-INSERT INTO fake_car_workshop_franchise.dim.dim_locations
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/dim/dim_parquet_files/dim_locations/`;
-
 -- -------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.dim.dim_products (
@@ -98,8 +101,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.dim.dim_products (
 )
 USING DELTA;
 
-INSERT INTO fake_car_workshop_franchise.dim.dim_products
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/dim/dim_parquet_files/dim_products/`;
 
 -- -------------------------------------------------------------
 
@@ -115,8 +116,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.dim.dim_services (
 )
 USING DELTA;
 
-INSERT INTO fake_car_workshop_franchise.dim.dim_services
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/dim/dim_parquet_files/dim_services/`;
 
 -- -------------------------------------------------------------
 
@@ -137,9 +136,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.dim.dim_suppliers (
 )
 USING DELTA;
 
-INSERT INTO fake_car_workshop_franchise.dim.dim_suppliers
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/dim/dim_parquet_files/dim_suppliers/`;
-
 -- -------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.dim.dim_vehicles (
@@ -158,9 +154,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.dim.dim_vehicles (
   first_registration_date     TIMESTAMP
 )
 USING DELTA;
-
-INSERT INTO fake_car_workshop_franchise.dim.dim_vehicles
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/dim/dim_parquet_files/dim_vehicles/`;
 
 
 -- =============================================================
@@ -187,8 +180,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_appointments (
 USING DELTA
 PARTITIONED BY (year, month);
 
-INSERT INTO fake_car_workshop_franchise.fact.fact_appointments
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/fact/fact_parquet_files/fact_appointments/`;
 
 -- -------------------------------------------------------------
 
@@ -205,8 +196,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_customer_feedba
 )
 USING DELTA;
 
-INSERT INTO fake_car_workshop_franchise.fact.fact_customer_feedback
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/fact/fact_parquet_files/fact_customer_feedback/`;
 
 -- -------------------------------------------------------------
 
@@ -221,9 +210,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_employee_schedu
   attendance       STRING
 )
 USING DELTA;
-
-INSERT INTO fake_car_workshop_franchise.fact.fact_employee_schedules
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/fact/fact_parquet_files/fact_employee_schedules/`;
 
 -- -------------------------------------------------------------
 
@@ -243,9 +229,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_inventory_movem
 )
 USING DELTA
 PARTITIONED BY (year, month);
-
-INSERT INTO fake_car_workshop_franchise.fact.fact_inventory_movements
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/fact/fact_parquet_files/fact_inventory_movements/`;
 
 -- -------------------------------------------------------------
 
@@ -270,9 +253,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_invoices (
 USING DELTA
 PARTITIONED BY (year, month);
 
-INSERT INTO fake_car_workshop_franchise.fact.fact_invoices
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/fact/fact_parquet_files/fact_invoices/`;
-
 -- -------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_loyalty_program (
@@ -287,8 +267,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_loyalty_program
 )
 USING DELTA;
 
-INSERT INTO fake_car_workshop_franchise.fact.fact_loyalty_program
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/fact/fact_parquet_files/fact_loyalty_program/`;
 
 -- -------------------------------------------------------------
 
@@ -306,9 +284,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_payments (
 USING DELTA
 PARTITIONED BY (year, month);
 
-INSERT INTO fake_car_workshop_franchise.fact.fact_payments
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/fact/fact_parquet_files/fact_payments/`;
-
 -- -------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_purchase_order_items (
@@ -321,9 +296,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_purchase_order_
   value_net                  DOUBLE
 )
 USING DELTA;
-
-INSERT INTO fake_car_workshop_franchise.fact.fact_purchase_order_items
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/fact/fact_parquet_files/fact_purchase_order_items/`;
 
 -- -------------------------------------------------------------
 
@@ -342,9 +314,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_purchase_orders
 )
 USING DELTA;
 
-INSERT INTO fake_car_workshop_franchise.fact.fact_purchase_orders
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/fact/fact_parquet_files/fact_purchase_orders/`;
-
 -- -------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_sales_items (
@@ -359,9 +328,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_sales_items (
   value_gross                DOUBLE
 )
 USING DELTA;
-
-INSERT INTO fake_car_workshop_franchise.fact.fact_sales_items
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/fact/fact_parquet_files/fact_sales_items/`;
 
 -- -------------------------------------------------------------
 
@@ -380,9 +346,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_sales_transacti
 USING DELTA
 PARTITIONED BY (year, month);
 
-INSERT INTO fake_car_workshop_franchise.fact.fact_sales_transactions
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/fact/fact_parquet_files/fact_sales_transactions/`;
-
 -- -------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_work_order_items (
@@ -399,9 +362,6 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_work_order_item
   discount_percent           BIGINT
 )
 USING DELTA;
-
-INSERT INTO fake_car_workshop_franchise.fact.fact_work_order_items
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/fact/fact_parquet_files/fact_work_order_items/`;
 
 -- -------------------------------------------------------------
 
@@ -423,5 +383,3 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise.fact.fact_work_orders (
 USING DELTA
 PARTITIONED BY (year, month);
 
-INSERT INTO fake_car_workshop_franchise.fact.fact_work_orders
-SELECT * FROM parquet.`/Volumes/fake_car_workshop_franchise/fact/fact_parquet_files/fact_work_orders/`;
