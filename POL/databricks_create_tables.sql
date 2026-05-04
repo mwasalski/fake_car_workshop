@@ -312,7 +312,8 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise_pl.fact.fact_purchase_ord
   status                       STRING,
   year                         INT
 )
-USING DELTA;
+USING DELTA
+PARTITIONED BY (year);
 
 -- -------------------------------------------------------------
 
