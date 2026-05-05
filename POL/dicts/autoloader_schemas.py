@@ -137,7 +137,7 @@ TABLE_SCHEMAS = {
         "location_id": "BIGINT",
         "customer_id": "BIGINT",
         "employee_id": "BIGINT",
-        "data_transakcji": "TIMESTAMP",
+        "data_transakcji": "DATE",
         "metoda_platnosci": "STRING",
         "nr_paragonu": "STRING",
         "rok": "BIGINT",
@@ -204,7 +204,7 @@ TABLE_SCHEMAS = {
         "location_id": "BIGINT",
         "service_id": "BIGINT",
         "data_rezerwacji": "DATE",
-        "data_wizyty": "TIMESTAMP",
+        "data_wizyty": "DATE",
         "status": "STRING",
         "kanal_rezerwacji": "STRING",
         "uwagi": "STRING",
@@ -276,3 +276,26 @@ PARTITIONED_TABLES = {
     "fact_appointments": ["rok", "miesiac"],
     "fact_purchase_orders": ["rok"],
 }
+
+try:
+    from pyspark.sql.types import (
+        StructType, StructField,
+        LongType, StringType, DateType, DoubleType, BooleanType,
+    )
+
+    _TYPE_MAP = {
+        "BIGINT":  LongType(),
+        "STRING":  StringType(),
+        "DATE":    DateType(),
+        "DOUBLE":  DoubleType(),
+        "BOOLEAN": BooleanType(),
+    }
+
+    def build_spark_schema(table_name: str) -> StructType:
+        return StructType([
+            StructField(col, _TYPE_MAP[dtype], nullable=True)
+            for col, dtype in TABLE_SCHEMAS[table_name].items()
+        ])
+
+except ImportError:
+    pass
