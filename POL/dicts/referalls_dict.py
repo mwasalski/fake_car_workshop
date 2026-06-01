@@ -2,6 +2,7 @@
 # SŁOWNIKI DANYCH REFERENCYJNYCH
 # ============================================================
 
+#STATES
 WOJEWODZTWA = [
     'dolnośląskie', 'kujawsko-pomorskie', 'lubelskie', 'lubuskie',
     'łódzkie', 'małopolskie', 'mazowieckie', 'opolskie',
@@ -9,6 +10,7 @@ WOJEWODZTWA = [
     'świętokrzyskie', 'warmińsko-mazurskie', 'wielkopolskie', 'zachodniopomorskie'
 ]
 
+#CITIES
 MIASTA = [
     ('Warszawa', 'mazowieckie', 52.2297, 21.0122),
     ('Kraków', 'małopolskie', 50.0647, 19.9450),
@@ -111,6 +113,7 @@ MIASTA = [
     ('Świecie', 'kujawsko-pomorskie', 53.4100, 18.4316),
 ]
 
+#CAR MANUFACTURERS
 MARKI_SAMOCHODOW = {
     'Toyota': ['Corolla', 'Yaris', 'RAV4', 'Camry', 'C-HR', 'Aygo', 'Hilux', 'Land Cruiser'],
     'Volkswagen': ['Golf', 'Passat', 'Polo', 'Tiguan', 'T-Roc', 'Arteon', 'Touran', 'Caddy'],

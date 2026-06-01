@@ -170,7 +170,7 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise_pl.fact.fact_appointments
   location_id      BIGINT,
   service_id       BIGINT,
   data_rezerwacji  DATE,
-  data_wizyty      TIMESTAMP,
+  data_wizyty      DATE,
   status           STRING,
   kanal_rezerwacji STRING,
   uwagi            STRING,
@@ -338,11 +338,11 @@ CREATE TABLE IF NOT EXISTS fake_car_workshop_franchise_pl.fact.fact_sales_transa
   location_id       BIGINT,
   customer_id       BIGINT,
   employee_id       BIGINT,
-  data_transakcji   TIMESTAMP,
+  data_transakcji   DATE,
   metoda_platnosci  STRING,
   nr_paragonu       STRING,
-  rok               INT,
-  miesiac           INT
+  rok               BIGINT,
+  miesiac           BIGINT
 )
 USING DELTA
 PARTITIONED BY (rok, miesiac);
