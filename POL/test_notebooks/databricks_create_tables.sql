@@ -4,6 +4,9 @@
 -- Schematy : dim  (wymiarowe)
 --            fact (faktowe)
 -- =============================================================
+-- Tworzenie catalogu
+CREATE CATALOG IF NOT EXISTS fake_car_workshop_franchise_pl;
+-- CREATE CATALOG IF NOT EXISTS fake_car_workshop_franchise_pl;
 
 
 -- Tworzenie schematów
@@ -17,8 +20,8 @@ CREATE VOLUME IF NOT EXISTS fake_car_workshop_franchise_pl.fact.autoloader_check
 -- ============================================================
 -- TWORZENIE WOLUMINÓW
 -- ============================================================
-CREATE VOLUME IF NOT EXISTS  fake_car_workshop_franchise_pl.dim.dim_parquet_files;
-CREATE VOLUME IF NOT EXISTS  fake_car_workshop_franchise_pl.fact.fact_parquet_files;
+CREATE VOLUME IF NOT EXISTS  fake_car_workshop_franchise_pl.dim.dim_daily_files;
+CREATE VOLUME IF NOT EXISTS  fake_car_workshop_franchise_pl.fact.fact_daily_files;
 
 -- =============================================================
 -- TABELE WYMIAROWE
