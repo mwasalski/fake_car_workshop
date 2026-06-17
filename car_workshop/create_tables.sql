@@ -313,7 +313,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.fact.fact_purchase_orders (
   status                       STRING,
   year                         INT
 )
-USING DELTA;
+USING DELTA
+PARTITIONED BY (year);
 
 -- -------------------------------------------------------------
 
