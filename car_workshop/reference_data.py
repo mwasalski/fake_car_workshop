@@ -294,3 +294,119 @@ POSITIONS = {
     'shop': ['sales_assistant', 'senior_sales_assistant', 'cashier', 'warehouse_operative'],
     'management': ['branch_manager', 'deputy_manager', 'accountant'],
 }
+
+# ============================================================
+# PRODUCT MANUFACTURERS & PRICING RULES
+# ============================================================
+
+MANUFACTURERS = [
+    'Bosch', 'Continental', 'Valeo', 'Hella', 'Mann', 'Mahle', 'NGK',
+    'Brembo', 'TRW', 'KYB', 'Monroe', 'Sachs', 'LuK', 'Gates',
+    'SKF', 'Dayco', 'Castrol', 'Mobil', 'Shell', 'Total', 'Motul',
+    'Liqui Moly', 'K2', 'Meguiars', 'Sonax', 'Goodyear', 'Michelin',
+    'Bridgestone', 'Pirelli', 'Varta', 'Exide', 'Banner',
+]
+
+# (keyword matched against lowercase product name, price_min, price_max)
+PRODUCT_PRICE_RULES = [
+    ('tyre', 180, 600),
+    ('battery', 250, 800),
+    ('clutch kit', 400, 2000),
+    ('dual mass flywheel', 400, 2000),
+    ('shock absorber', 100, 400),
+    ('filter', 15, 80),
+    ('brake pads', 60, 300),
+    ('brake discs', 60, 300),
+    ('oil', 30, 180),
+    ('bulb', 8, 120),
+]
+DEFAULT_PRICE_RANGE = (5, 800)
+
+# ============================================================
+# FACT TABLE REFERENCE LISTS
+# ============================================================
+
+WORK_ORDER_NOTES = [
+    '', '', 'Knocking noise when braking', 'Engine losing power', 'Oil leak',
+    'Seasonal tyre change', 'Periodic service', 'Air conditioning not cooling',
+    'Engine warning light', 'Suspension noise', 'Brake pad replacement',
+    'Preparation for inspection', 'Oil change', 'Starter motor problem',
+    'Steering wheel vibration', 'Spark plug replacement',
+]
+
+APPOINTMENT_STATUSES = ['confirmed', 'completed', 'cancelled', 'no_show']
+APPOINTMENT_STATUS_WEIGHTS = [0.10, 0.75, 0.10, 0.05]
+
+BOOKING_CHANNELS = ['phone', 'online', 'in_person', 'email']
+BOOKING_CHANNEL_WEIGHTS = [0.35, 0.40, 0.15, 0.10]
+
+APPOINTMENT_NOTES = [
+    '', '', '', 'Please call before', 'Courtesy car needed',
+    'Prefer morning', 'Urgent', 'Previously arranged',
+]
+
+INVOICE_DOCUMENT_TYPES = ['vat_invoice', 'receipt', 'credit_note']
+INVOICE_DOCUMENT_TYPE_WEIGHTS = [0.35, 0.60, 0.05]
+
+INVOICE_STATUSES = ['paid', 'pending', 'overdue', 'cancelled']
+INVOICE_STATUS_WEIGHTS = [0.80, 0.10, 0.07, 0.03]
+
+PAYMENT_STATUSES = ['completed', 'pending', 'rejected', 'refund']
+PAYMENT_STATUS_WEIGHTS = [0.90, 0.05, 0.03, 0.02]
+
+PO_STATUSES = ['placed', 'in_progress', 'delivered', 'partially_delivered', 'cancelled']
+PO_STATUS_WEIGHTS = [0.03, 0.05, 0.85, 0.05, 0.02]
+
+MOVEMENT_TYPES = ['receipt', 'issue_sales', 'issue_workshop', 'return', 'correction', 'stocktake']
+MOVEMENT_TYPE_WEIGHTS = [0.25, 0.35, 0.25, 0.05, 0.05, 0.05]
+
+SOURCE_DOCUMENTS = ['GR', 'GI', 'RM', 'RT', 'COR', 'INV']
+
+INVENTORY_NOTES = [
+    '', '', '', 'Regular delivery', 'Special order',
+    'Customer return', 'Stock correction',
+]
+
+FEEDBACK_COMMENTS = [
+    'Very professional service', 'Quick turnaround', 'Highly recommended!',
+    'A bit overpriced', 'Long waiting time', 'Great communication',
+    'Expert repair', 'Car ready ahead of schedule', 'Friendly staff',
+    'Could be cheaper', 'Will definitely come back', 'Solid work',
+    'Fair prices', 'Problem returned after a month', 'No complaints',
+    'Excellent!', 'Average', 'Needs improvement', 'OK', '',
+]
+
+FEEDBACK_CATEGORIES = ['service_quality', 'repair_quality', 'turnaround_time', 'price', 'cleanliness', 'overall']
+FEEDBACK_CATEGORY_WEIGHTS = [0.20, 0.25, 0.15, 0.15, 0.10, 0.15]
+
+FEEDBACK_CHANNELS = ['google', 'online_form', 'email', 'phone']
+FEEDBACK_CHANNEL_WEIGHTS = [0.40, 0.30, 0.20, 0.10]
+
+RATING_WEIGHTS = [0.03, 0.05, 0.12, 0.30, 0.50]  # ratings 1..5
+
+LOYALTY_EVENT_TYPES = ['points_earned', 'points_redeemed', 'bonus', 'expiry']
+LOYALTY_EVENT_WEIGHTS = [0.60, 0.20, 0.10, 0.10]
+
+LOYALTY_POINTS = [-500, -200, -100, 10, 20, 50, 100, 200, 500]
+LOYALTY_POINT_WEIGHTS = [0.05, 0.07, 0.08, 0.20, 0.25, 0.15, 0.10, 0.05, 0.05]
+
+LOYALTY_DESCRIPTIONS = [
+    'Shop purchase', 'Workshop service', 'Welcome bonus',
+    'Birthday bonus', 'Redeemed for 10% discount', 'Redeemed for 20% discount',
+    'Redeemed for free service', 'Points expired', 'Referral bonus',
+]
+
+LOYALTY_TIERS = ['standard', 'silver', 'gold', 'platinum']
+LOYALTY_TIER_WEIGHTS = [0.50, 0.30, 0.15, 0.05]
+
+SHIFT_TYPES = ['day', 'morning', 'afternoon', 'night', 'day_off', 'holiday', 'sick_leave']
+SHIFT_TYPE_WEIGHTS = [0.40, 0.15, 0.15, 0.02, 0.15, 0.08, 0.05]
+
+SHIFT_START_HOURS = [6, 7, 8, 9, 10, 12, 14]
+SHIFT_START_WEIGHTS = [0.05, 0.25, 0.30, 0.15, 0.05, 0.10, 0.10]
+
+SHIFT_LENGTHS = [4, 6, 8, 10, 12]
+SHIFT_LENGTH_WEIGHTS = [0.10, 0.10, 0.60, 0.15, 0.05]
+
+ATTENDANCE_TYPES = ['present', 'absent_excused', 'absent_unexcused', 'late']
+ATTENDANCE_WEIGHTS = [0.88, 0.08, 0.02, 0.02]
