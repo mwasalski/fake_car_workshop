@@ -25,10 +25,10 @@ run_all.ipynb                orchestrator: setup + daily cycle via %run
 | `daily.ipynb` | daily fact generator (parquet -> volume) |
 | `backfill.ipynb` | historical backfill – runs `daily.ipynb` per date in parallel |
 | `autoloader.ipynb` | incremental fact ingest (`cloudFiles`, checkpointed) |
+| `silver/` | silver layer: DDL + bronze -> silver streaming jobs (see `silver/README.md`) |
 | `reference_data.py` | all reference data: cities, car makes, products, services, statuses, weights |
 | `table_schemas.py` | single source of truth for table schemas + partition layout |
-| `test.ipynb` | utility: NULL audit of every column in a schema |
-| `tables_checker.ipynb` | utility: row / distinct counts (manual use only – contains DELETE cells) |
+| `testing/` | data checks: row counts & sizes, NULL audit, duplicate checks (see `testing/README.md`) |
 | `delete_truncate.sql` | cleanup snippets: DELETE / TRUNCATE / DROP for all tables |
 
 ## Setup on a new environment
