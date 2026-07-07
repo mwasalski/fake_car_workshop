@@ -29,6 +29,7 @@ run_all.ipynb                orchestrator: setup + daily cycle via %run
 | `reference_data.py` | all reference data: cities, car makes, products, services, statuses, weights |
 | `table_schemas.py` | single source of truth for table schemas + partition layout |
 | `testing/` | data checks: row counts & sizes, NULL audit, duplicate checks (see `testing/README.md`) |
+| `learning/` | exam-prep notebooks: skew, salting, shuffle, Auto Loader, CDC, CDF, Delta internals (uses a disposable `car_workshop.lab` schema) |
 | `delete_truncate.sql` | cleanup snippets: DELETE / TRUNCATE / DROP for all tables |
 
 ## Setup on a new environment
