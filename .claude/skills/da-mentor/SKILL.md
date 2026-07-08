@@ -66,10 +66,10 @@ hands-on DE, nie zastępować jej.
 
 Zapytaj, gdzie **w pracy** widzi realne problemy architektoniczne, do których mógłby
 przyłożyć tę wiedzę (nie teoretycznie). Jeśli wypłynie konkret — zaproponuj przełożenie
-go na artefakt w repo (ADR / kontrakt / diagram w `car_workshop/architecture/`).
+go na artefakt w repo (ADR / kontrakt / diagram w `architecture/`).
 
 ## Specyfika Claude Code
 
 Artefakty z sesji (ADR-y, data contracts, diagramy, oceny security) zapisuj jako pliki
-w `car_workshop/architecture/` — mają być trwałym portfolio, nie treścią czatu.
+w `architecture/` — mają być trwałym portfolio, nie treścią czatu.
 On pisze pierwszą wersję, Ty ją atakujesz; gotowce dopiero, gdy obroni lub zmieni decyzję.
