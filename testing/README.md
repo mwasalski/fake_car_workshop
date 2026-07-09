@@ -7,6 +7,7 @@ Utilities for inspecting how much data the platform holds and whether it is heal
 | file | purpose |
 | --- | --- |
 | `row_counts.ipynb` | `count(*)` + file count + size for **every** table in the catalog (schemas discovered dynamically), per-schema totals, backfill date-coverage check, rows-per-day trend |
+| `preview_tables.ipynb` | one `SELECT * ... LIMIT 100` cell per table (7 dim + 13 fact + 4 silver) – quick eyeball check, read-only |
 | `test.ipynb` | NULL audit: null count / percentage for every column of every table in a schema |
 | `tables_checker.ipynb` | row / distinct counts per table – **manual use only**, contains DELETE cells |
 
