@@ -1,0 +1,94 @@
+bundle:
+  name: engineering_metrics
+  uuid: 6b0d780d-aa5f-4236-bf5c-b242a4c5d9b2
+
+variables:
+  catalog:
+    description: "Catalog name for the environment"
+  schema:
+    description: "Schema name"
+  is_prod_run:
+    description: "Flag indicating if this is a production run"
+  source_system:
+    description: "Source system identifier"
+  cost_center:
+    description: "Cost center"
+  custodian:
+    description: "Data custodian email"
+  customer_id:
+    description: "Customer identifier"
+  data_type:
+    description: "Type of data"
+  owner:
+    description: "Data owner email"
+  project:
+    description: "Project name"
+  region:
+    description: "Region"
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    mode: development
+    workspace:
+      host: https://123.16.azuredatabricks.net
+      root_path: ~/engineering_metrics
+    variables:
+      catalog: test
+      schema: engineering_metrics
+      is_prod_run: false
+      source_system: engineering_metrics
+      cost_center: PGX
+      custodian: ok@cc.com
+      customer_id: GPX
+      data_type: analytical
+      owner: ok@cc.com
+      project: engineering_metrics
+      region: uksouth
+    resources:
+      jobs:
+        enginering_metrics_ingest_ampify:
+          schedule:
+            pause_status: PAUSED
+        enginering_metrics_ingest_devops:
+          schedule:
+            pause_status: PAUSED
+        enginering_metrics_ingest_jira:
+          schedule:
+            pause_status: PAUSED
+        enginering_metrics_ingest_pagerduty:
+          schedule:
+            pause_status: PAUSED
+        enginering_metrics_ingest_sonarcloud:
+          schedule:
+            pause_status: PAUSED
+    permissions:
+      - user_name: ok@ss.com
+        level: CAN_MANAGE
+      - user_name: mm@ss.com
+        level: CAN_MANAGE
+
+  prod:
+    mode: production
+    workspace:
+      host: https://adb-145.3.azuredatabricks.net
+      root_path: /Workspace/EngineeringMetrics/
+    variables:
+      catalog: production
+      schema: engineering_metrics
+      is_prod_run: true
+      source_system: engineering_metrics
+      cost_center: PGX
+      custodian: ok@cc.com
+      customer_id: GPX
+      data_type: analytical
+      owner: ok@cc.com
+      project: engineering_metrics
+      region: uksouth
+    permissions:
+      - user_name: ok@ss.com
+        level: CAN_MANAGE
+      - user_name: mm@ss.com
+        level: CAN_MANAGE
