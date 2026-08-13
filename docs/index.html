@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Car Workshop Data Platform — interactive manual</title>
+<meta name="description" content="Interactive walkthrough of a synthetic Databricks medallion pipeline: generator, Auto Loader, silver quality gate, REST API ingestion.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔧</text></svg>">
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #121821;
+    --panel2: #0e141c;
+    --border: #223042;
+    --text: #d7e1ec;
+    --muted: #8296ab;
+    --bronze: #cd8a4b;
+    --silver: #aab7c4;
+    --gold: #e8c35a;
+    --blue: #58a6ff;
+    --green: #4dd08a;
+    --red: #f07178;
+    --mono: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding-bottom: 80px;
+  }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- hero ---------- */
+  header { padding: 64px 0 40px; border-bottom: 1px solid var(--border);
+           background: radial-gradient(1200px 400px at 30% -10%, #16283f 0%, transparent 60%); }
+  .kicker { font-family: var(--mono); font-size: 13px; letter-spacing: 2px;
+            text-transform: uppercase; color: var(--bronze); }
+  h1 { font-size: clamp(28px, 4.5vw, 44px); line-height: 1.15; margin: 10px 0 14px; }
+  h1 .grad { background: linear-gradient(90deg, var(--bronze), var(--silver), var(--gold));
+             -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { color: var(--muted); max-width: 720px; font-size: 18px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+  .chip { font-family: var(--mono); font-size: 13px; padding: 6px 12px; border-radius: 999px;
+          border: 1px solid var(--border); background: var(--panel); color: var(--muted); }
+  .chip b { color: var(--text); font-weight: 600; }
+  .cta { margin-top: 26px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn { display: inline-block; padding: 9px 18px; border-radius: 8px; font-weight: 600;
+         font-size: 14px; border: 1px solid var(--border); background: var(--panel); color: var(--text); }
+  .btn.primary { background: var(--blue); border-color: var(--blue); color: #04121f; }
+  .btn:hover { text-decoration: none; filter: brightness(1.15); }
+
+  /* ---------- sections ---------- */
+  section { padding: 56px 0 8px; }
+  h2 { font-size: 26px; margin-bottom: 6px; }
+  .sub { color: var(--muted); margin-bottom: 24px; max-width: 760px; }
+  h2 .num { font-family: var(--mono); color: var(--bronze); font-size: 18px; margin-right: 8px; }
+
+  /* ---------- pipeline map ---------- */
+  .map-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+              gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .map-grid { grid-template-columns: 1fr; } }
+  .svgcard { background: var(--panel2); border: 1px solid var(--border); border-radius: 12px;
+             padding: 10px; overflow-x: auto; }
+  svg { display: block; min-width: 640px; width: 100%; height: auto; }
+  .node rect { fill: var(--panel); stroke: var(--border); stroke-width: 1.2; rx: 9; cursor: pointer;
+               transition: stroke .15s, filter .15s; }
+  .node text { pointer-events: none; }
+  .node .t { fill: var(--text); font: 600 13px var(--mono); }
+  .node .s { fill: var(--muted); font: 11px var(--mono); }
+  .node:hover rect { stroke: var(--blue); }
+  .node.active rect { stroke: var(--gold); stroke-width: 2; filter: drop-shadow(0 0 6px rgba(232,195,90,.35)); }
+  .node.lit rect { stroke: var(--green); stroke-width: 2; filter: drop-shadow(0 0 6px rgba(77,208,138,.35)); }
+  .edge { stroke: #37516e; stroke-width: 1.6; fill: none; }
+  .edge.dashed { stroke-dasharray: 5 5; }
+  .edge.lit { stroke: var(--green); stroke-width: 2.4; }
+  .lane { fill: #5a7590; font: 700 10.5px var(--mono); letter-spacing: 1.5px; }
+
+  .detail { background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+            padding: 20px; position: sticky; top: 16px; }
+  .detail .badge { display: inline-block; font: 600 11px var(--mono); letter-spacing: 1px;
+                   padding: 3px 10px; border-radius: 999px; margin-bottom: 10px;
+                   border: 1px solid var(--border); color: var(--muted); text-transform: uppercase; }
+  .detail h3 { font-size: 18px; margin-bottom: 8px; font-family: var(--mono); }
+  .detail p { color: var(--muted); font-size: 14.5px; margin-bottom: 12px; }
+  .detail p b { color: var(--text); }
+  pre { background: #0a0e13; border: 1px solid var(--border); border-radius: 8px;
+        padding: 14px; overflow-x: auto; font: 12.5px/1.55 var(--mono); color: #c8d6e5; }
+  .filelink { display: inline-block; margin-top: 12px; font-family: var(--mono); font-size: 13px; }
+
+  /* ---------- day player ---------- */
+  .player { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 22px; }
+  .player-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .pbtn { font: 600 14px var(--mono); padding: 8px 16px; border-radius: 8px; cursor: pointer;
+          border: 1px solid var(--border); background: var(--panel2); color: var(--text); }
+  .pbtn:hover { border-color: var(--blue); }
+  .pbtn:disabled { opacity: .35; cursor: default; }
+  .pbtn.play { background: var(--gold); border-color: var(--gold); color: #1a1405; }
+  .stepdots { display: flex; gap: 6px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); transition: background .2s; }
+  .dot.done { background: var(--green); }
+  .dot.now { background: var(--gold); }
+  .step-narr { min-height: 84px; }
+  .step-narr .sn-title { font: 600 15px var(--mono); color: var(--gold); margin-bottom: 6px; }
+  .step-narr .sn-body { color: var(--muted); font-size: 14.5px; max-width: 820px; }
+  .step-narr .sn-body code { font-family: var(--mono); font-size: 13px; color: var(--text);
+                             background: #0a0e13; padding: 1px 6px; border-radius: 4px; }
+
+  /* ---------- api demo ---------- */
+  .apidemo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 20px; }
+  @media (max-width: 900px) { .apidemo { grid-template-columns: 1fr; } }
+  .terminal { background: #0a0e13; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .termbar { display: flex; align-items: center; gap: 6px; padding: 10px 14px;
+             background: var(--panel2); border-bottom: 1px solid var(--border); }
+  .tdot { width: 11px; height: 11px; border-radius: 50%; }
+  .termbar span.lbl { margin-left: 8px; font: 12px var(--mono); color: var(--muted); }
+  .termbody { padding: 16px; font: 12.5px/1.6 var(--mono); overflow-x: auto; max-height: 420px; overflow-y: auto; }
+  .req { color: var(--green); white-space: pre-wrap; word-break: break-all; }
+  .json-key { color: #79b8ff; }
+  .json-str { color: #9ecbff; }
+  .json-num { color: #f2cc60; }
+  .json-null { color: var(--red); font-weight: 700; }
+  .api-side .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+                    padding: 18px; margin-bottom: 14px; }
+  .api-side h3 { font-size: 16px; margin-bottom: 8px; }
+  .api-side p { color: var(--muted); font-size: 14px; margin-bottom: 10px; }
+  .cursor-reveal { font: 13px var(--mono); background: #0a0e13; border: 1px dashed var(--border);
+                   border-radius: 8px; padding: 10px 12px; margin-top: 8px; display: none; }
+  .cursor-reveal.show { display: block; }
+  .walkin-note { color: var(--red); font-family: var(--mono); font-size: 12.5px; }
+
+  /* ---------- pathology cards ---------- */
+  .grid3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .pcard { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .pcard h3 { font: 600 15px var(--mono); margin-bottom: 8px; }
+  .pcard p { color: var(--muted); font-size: 14px; }
+  .pcard code { font-family: var(--mono); font-size: 12.5px; color: var(--text);
+                background: #0a0e13; padding: 1px 6px; border-radius: 4px; }
+  .tag { display: inline-block; font: 600 10.5px var(--mono); letter-spacing: 1px; text-transform: uppercase;
+         padding: 2px 8px; border-radius: 999px; margin-bottom: 10px; }
+  .tag.skew { color: var(--bronze); border: 1px solid var(--bronze); }
+  .tag.null { color: var(--red); border: 1px solid var(--red); }
+  .tag.idem { color: var(--green); border: 1px solid var(--green); }
+  .tag.qual { color: var(--silver); border: 1px solid var(--silver); }
+
+  /* ---------- governance chain ---------- */
+  .chain { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; margin-bottom: 18px; }
+  .link-box { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+              padding: 12px 16px; min-width: 170px; flex: 1; }
+  .link-box .lt { font: 600 12.5px var(--mono); }
+  .link-box .ls { color: var(--muted); font-size: 12px; margin-top: 3px; }
+  .chain .arr { align-self: center; color: var(--bronze); font-size: 20px; padding: 0 10px; font-family: var(--mono); }
+
+  footer { margin-top: 70px; padding-top: 24px; border-top: 1px solid var(--border);
+           color: var(--muted); font-size: 13.5px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="kicker">fake_car_workshop · databricks · unity catalog</div>
+    <h1>A synthetic data platform,<br><span class="grad">explained interactively</span></h1>
+    <p class="lede">100 Polish car workshops that don't exist generate ~100K rows a day —
+      so their medallion pipeline, quality gates and REST ingestion can be broken,
+      profiled and fixed on purpose. This page walks through how it works.</p>
+    <div class="chips">
+      <span class="chip"><b>20</b> Delta tables</span>
+      <span class="chip"><b>13</b> daily fact feeds</span>
+      <span class="chip"><b>~100K</b> rows/day (scales to 10M)</span>
+      <span class="chip"><b>seed=date</b> → fully reproducible</span>
+      <span class="chip">bronze → silver + quarantine</span>
+    </div>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/mwasalski/fake_car_workshop">View the repo →</a>
+      <a class="btn" href="#map">Explore the pipeline ↓</a>
+    </div>
+  </div>
+</header>
+
+<section id="map">
+  <div class="wrap">
+    <h2><span class="num">01</span>The pipeline map</h2>
+    <p class="sub">Click any node. The panel shows what runs, when, the key code and a link
+      to the real file. Dashed edges are the API ingestion track (in progress).</p>
+    <div class="map-grid">
+      <div class="svgcard"><svg id="pipe" viewBox="0 0 960 590" role="img"
+        aria-label="Pipeline diagram: generator to volume to Auto Loader to bronze to silver"></svg></div>
+      <div class="detail" id="detail"></div>
+    </div>
+  </div>
+</section>
+
+<section id="day">
+  <div class="wrap">
+    <h2><span class="num">02</span>One day in the pipeline</h2>
+    <p class="sub">Press play to follow a single <code style="font-family:var(--mono)">TARGET_DATE</code>
+      through the whole system — the map above lights up as data moves.</p>
+    <div class="player">
+      <div class="player-controls">
+        <button class="pbtn play" id="playBtn">▶ Play</button>
+        <button class="pbtn" id="prevBtn">←</button>
+        <button class="pbtn" id="nextBtn">→</button>
+        <div class="stepdots" id="dots"></div>
+      </div>
+      <div class="step-narr" id="narr"></div>
+    </div>
+  </div>
+</section>
+
+<section id="api">
+  <div class="wrap">
+    <h2><span class="num">03</span>Live-ish API demo: cursor pagination</h2>
+    <p class="sub">The platform also exposes sales over REST (FastAPI). The generator is
+      deterministic, so these are <b>real responses</b> baked into the page — click through
+      the pages exactly like an ingestion client would.</p>
+    <div class="apidemo">
+      <div class="api-side">
+        <div class="card">
+          <h3>Why a cursor and not <span style="font-family:var(--mono)">?page=3</span>?</h3>
+          <p>Page numbers shift when rows are inserted between requests — you silently skip
+            or duplicate records. A cursor pins your position in the stream instead.</p>
+          <button class="pbtn" id="nextPage">GET next page →</button>
+          <button class="pbtn" id="resetPages">↺ reset</button>
+        </div>
+        <div class="card">
+          <h3>What's inside the cursor?</h3>
+          <p>It's opaque — clients must never parse it. But since we own the server…</p>
+          <button class="pbtn" id="peekBtn">🔍 decode it anyway</button>
+          <div class="cursor-reveal" id="peek"></div>
+        </div>
+        <div class="card">
+          <h3>Spot the pathology</h3>
+          <p class="walkin-note">customer_id: null ≈ 30% of rows — walk-in customers.
+            Deliberate: it feeds NULL-handling and skew exercises downstream.</p>
+        </div>
+      </div>
+      <div class="terminal">
+        <div class="termbar">
+          <span class="tdot" style="background:#f07178"></span>
+          <span class="tdot" style="background:#e8c35a"></span>
+          <span class="tdot" style="background:#4dd08a"></span>
+          <span class="lbl" id="pageLbl">page 1 / 3</span>
+        </div>
+        <div class="termbody" id="termbody"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pathologies">
+  <div class="wrap">
+    <h2><span class="num">04</span>Pathologies by design</h2>
+    <p class="sub">Clean data teaches nothing. Every quirk below is intentional —
+      each one is a downstream exercise in disguise.</p>
+    <div class="grid3">
+      <div class="pcard"><span class="tag null">nulls</span>
+        <h3>Walk-in customers</h3>
+        <p>~30% of sales have <code>customer_id = NULL</code>. Joins to
+          <code>dim_customers</code> must decide: drop, keep, or bucket — and aggregations
+          over NULL keys create a fat skewed partition.</p></div>
+      <div class="pcard"><span class="tag null">sentinel</span>
+        <h3>The zero that means nothing</h3>
+        <p><code>work_order_items</code> uses <code>0</code> for the unused service/product FK.
+          Silver converts it to proper <code>NULL</code> — a classic source-system smell
+          you get to clean.</p></div>
+      <div class="pcard"><span class="tag idem">idempotency</span>
+        <h3>Re-runs write duplicates</h3>
+        <p>Same date re-run = identical rows, new random file names. Auto Loader happily
+          ingests both. The silver insert-only <code>MERGE</code> is what makes the
+          pipeline idempotent — bronze is deliberately not.</p></div>
+      <div class="pcard"><span class="tag skew">skew</span>
+        <h3>Weighted everything</h3>
+        <p>Payment methods, statuses, cities, car makes — all drawn from realistic weighted
+          distributions (<code>reference_data.py</code>). Perfect raw material for salting
+          and AQE experiments.</p></div>
+      <div class="pcard"><span class="tag qual">quality gate</span>
+        <h3>Quarantine, not silent drops</h3>
+        <p>Silver builds a <code>_reject_reason</code> per rule; rejects are appended to
+          <code>*_quarantine</code> tables. Bad data is evidence, not garbage.</p></div>
+      <div class="pcard"><span class="tag qual">types</span>
+        <h3>date32 discipline</h3>
+        <p>Every date column is built from real <code>datetime.date</code> objects so parquet
+          gets <code>date32</code>, matching the Delta <code>DATE</code> declaration —
+          not a <code>datetime64</code> timestamp in disguise.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="governance">
+  <div class="wrap">
+    <h2><span class="num">05</span>Governance: how ADLS gets plugged in</h2>
+    <p class="sub">External storage is never "just a path". Unity Catalog chains four objects
+      between a query and the bytes — no keys, no secrets, no Spark conf:</p>
+    <div class="chain">
+      <div class="link-box"><div class="lt">Access Connector</div>
+        <div class="ls">Azure managed identity + RBAC on the storage account</div></div>
+      <div class="arr">→</div>
+      <div class="link-box"><div class="lt">Storage Credential</div>
+        <div class="ls">UC object wrapping the connector</div></div>
+      <div class="arr">→</div>
+      <div class="link-box"><div class="lt">External Location</div>
+        <div class="ls">abfss:// path × credential = authorization zone</div></div>
+      <div class="arr">→</div>
+      <div class="link-box"><div class="lt">Volume / Table</div>
+        <div class="ls">files via /Volumes/…, Delta tables on your own path</div></div>
+    </div>
+    <p class="sub">The whole chain is code: an <a
+      href="https://github.com/mwasalski/fake_car_workshop/blob/main/setup_adls_azure.md">az-cli
+      walkthrough</a>, plain <a
+      href="https://github.com/mwasalski/fake_car_workshop/blob/main/create_external_adls.sql">SQL</a>,
+      and a <a href="https://github.com/mwasalski/fake_car_workshop/tree/main/terraform">Terraform
+      module</a> that replaces both.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>fake_car_workshop — a training ground, not a product. Everything here is synthetic.</span>
+    <span><a href="https://github.com/mwasalski/fake_car_workshop">github.com/mwasalski/fake_car_workshop</a></span>
+  </div>
+</footer>
+
+<script>
+/* ================= pipeline map ================= */
+const GH = 'https://github.com/mwasalski/fake_car_workshop/blob/main/';
+
+const NODES = [
+  { id:'ddl',       x:20,  y:60,  w:180, title:'create_tables.sql', sub:'DDL · once',        badge:'one-time',
+    desc:'Creates the <b>car_workshop</b> catalog, schemas (dim/fact/silver/lab), volumes and all 20 empty Delta tables. Idempotent — <code>IF NOT EXISTS</code> everywhere.',
+    code:'CREATE CATALOG IF NOT EXISTS car_workshop;\nCREATE SCHEMA  IF NOT EXISTS car_workshop.fact;\nCREATE VOLUME  IF NOT EXISTS car_workshop.fact.fact_files;',
+    file:'create_tables.sql' },
+  { id:'dims',      x:230, y:60,  w:190, title:'initial_dims.ipynb', sub:'7 dims · once',    badge:'one-time',
+    desc:'Loads 7 dimension tables (customers, employees, locations, vehicles…) with <b>seed 42</b> — a direct Delta overwrite, safe to re-run. Dims do <b>not</b> flow through Auto Loader.',
+    code:"rng = np.random.default_rng(42)\ndf.write.mode('overwrite') \\\n  .saveAsTable('car_workshop.dim.dim_customers')",
+    file:'initial_dims.ipynb' },
+  { id:'daily',     x:20,  y:170, w:180, title:'daily.ipynb', sub:'13 fact generators',      badge:'daily',
+    desc:'Generates ~100K rows across 13 fact tables. <b>Seed = TARGET_DATE</b>, and every day owns a disjoint 10M ID block — re-running a date reproduces identical rows, and IDs never collide across days.',
+    code:"ID_BLOCK = 10_000_000\nID_START = (TARGET_DATE - date(2020,1,1)).days * ID_BLOCK\nrng = np.random.default_rng(int(TARGET_DATE.strftime('%Y%m%d')))",
+    file:'daily.ipynb' },
+  { id:'backfill',  x:20,  y:280, w:180, title:'backfill.ipynb', sub:'history · parallel',   badge:'on demand',
+    desc:'Runs daily.ipynb once per historical date via <code>dbutils.notebook.run</code>, in parallel. Uses <code>fact_employee_schedules</code> files as the per-date completion marker (daily writes that table last), so it can skip finished dates.',
+    code:"dbutils.notebook.run('daily', 0,\n  {'TARGET_DATE': d, 'SCALE_FACTOR': sf})",
+    file:'backfill.ipynb' },
+  { id:'volume',    x:270, y:170, w:200, title:'/Volumes/…/fact_files', sub:'parquet landing', badge:'storage',
+    desc:'Hive-partitioned parquet per <code>PARTITIONED_TABLES</code> (year/month). Dates arrive as real <b>date32</b>, never datetime64 — the Delta tables declare DATE.',
+    code:'/Volumes/car_workshop/fact/fact_files/\n  fact_sales_transactions/year=2026/month=8/\n    part-….parquet',
+    file:'table_schemas.py' },
+  { id:'autoloader',x:540, y:170, w:180, title:'autoloader.ipynb', sub:'cloudFiles stream',   badge:'daily',
+    desc:'Incremental ingest: Auto Loader tracks already-seen files in a checkpoint, so each run picks up <b>only new files</b>. 13 streams, one per fact table.',
+    code:"spark.readStream.format('cloudFiles')\\\n  .option('cloudFiles.format','parquet')\\\n  .option('cloudFiles.schemaLocation', ckpt)\\\n  .load(src)",
+    file:'autoloader.ipynb' },
+  { id:'bronze',    x:760, y:170, w:180, title:'car_workshop.fact.*', sub:'bronze · 13 tables', badge:'delta',
+    desc:'Raw facts, append-only. Duplicates from re-runs land here <b>by design</b> — bronze preserves what arrived; deduplication is silver\'s job.',
+    code:'SELECT count(*) FROM car_workshop.fact\n  .fact_sales_transactions;  -- grows daily',
+    file:'create_tables.sql' },
+  { id:'silver',    x:540, y:300, w:180, title:'silver stream', sub:'foreachBatch + rules',   badge:'daily',
+    desc:'Streams bronze with <b>CDF</b>, then per batch: dedup → quality rules building <code>_reject_reason</code> → split. The reference implementation is <code>silver/silver_sales.ipynb</code>.',
+    code:"(spark.readStream.table(bronze)\n  .writeStream.foreachBatch(process)\n  .option('checkpointLocation', ckpt)\n  .trigger(availableNow=True).start())",
+    file:'silver/silver_sales.ipynb' },
+  { id:'quarantine',x:760, y:280, w:180, title:'*_quarantine', sub:'rejects + reason',        badge:'delta',
+    desc:'Every rejected row is appended here with its <code>_reject_reason</code>. Bad data stays queryable — you can audit rules, measure reject rates, and replay.',
+    code:"SELECT _reject_reason, count(*)\nFROM car_workshop.silver.sales_quarantine\nGROUP BY 1 ORDER BY 2 DESC;",
+    file:'silver/silver_sales.ipynb' },
+  { id:'silvertbl', x:760, y:370, w:180, title:'car_workshop.silver.*', sub:'clean · clustered', badge:'delta',
+    desc:'Valid rows enter via <b>insert-only MERGE</b> — the idempotency gate: re-ingested duplicates match on the key and are skipped. Drops year/month, uses liquid clustering.',
+    code:'MERGE INTO silver.sales t USING batch s\n  ON t.transaction_id = s.transaction_id\nWHEN NOT MATCHED THEN INSERT *',
+    file:'silver/silver_sales.ipynb' },
+  { id:'apisrv',    x:20,  y:470, w:180, title:'FastAPI /sales', sub:'cursor pagination',     badge:'api track',
+    desc:'The same deterministic generator exposed over REST: opaque cursors, strict validation, pathologies on the roadmap (429 + Retry-After, random 500s, duplicate pages). Try it in section 03.',
+    code:"@app.get('/sales', response_model=SalesPage)\ndef get_sales(date: Date, page_size: int = 100,\n              cursor: str | None = None): …",
+    file:'api/main.py' },
+  { id:'client',    x:270, y:470, w:200, title:'ingest client', sub:'httpx · backoff · WIP',  badge:'api track',
+    desc:'The exercise half: pull all pages with timeouts, exponential backoff, a watermark, and idempotent JSONL output — then drop files onto ADLS so Auto Loader takes over.',
+    code:'# ingest/pull_sales.py — being built\n# audit checklist: timeouts, retry on 5xx only,\n# backoff+jitter, 429, idempotent re-run',
+    file:'api/README.md' },
+  { id:'adls',      x:540, y:470, w:180, title:'ADLS Gen2 landing', sub:'UC external volume', badge:'api track',
+    desc:'External volume governed by Unity Catalog (see section 05). Files dropped here flow into the <b>same</b> Auto Loader → bronze → silver path as the daily generator.',
+    code:"abfss://landing@….dfs.core.windows.net/\n  volumes/fact_landing/",
+    file:'create_external_adls.sql' },
+];
+
+const EDGES = [
+  ['ddl','dims'], ['daily','volume'], ['backfill','daily'], ['volume','autoloader'],
+  ['autoloader','bronze'], ['bronze','silver',], ['silver','quarantine'], ['silver','silvertbl'],
+  ['apisrv','client','dashed'], ['client','adls','dashed'], ['adls','autoloader','dashed'],
+];
+
+const LANES = [
+  [20, 40, 'ONE-TIME SETUP'], [20, 150, 'DAILY CYCLE'], [20, 450, 'API TRACK · IN PROGRESS'],
+];
+
+const svg = document.getElementById('pipe');
+const NS = 'http://www.w3.org/2000/svg';
+const H = 62;
+const nodeById = {};
+
+function el(name, attrs, parent) {
+  const e = document.createElementNS(NS, name);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  (parent || svg).appendChild(e);
+  return e;
+}
+
+// arrowhead
+const defs = el('defs', {});
+const marker = el('marker', { id:'arr', viewBox:'0 0 10 10', refX:'9', refY:'5',
+  markerWidth:'7', markerHeight:'7', orient:'auto-start-reverse' }, defs);
+el('path', { d:'M0,0 L10,5 L0,10 z', fill:'#37516e' }, marker);
+
+LANES.forEach(([x, y, label]) => el('text', { x, y, class:'lane' }).textContent = label);
+
+// edges first (under nodes)
+const edgeEls = {};
+EDGES.forEach(([a, b, style]) => {
+  const A = NODES.find(n => n.id === a), B = NODES.find(n => n.id === b);
+  let d;
+  if (Math.abs(A.y - B.y) < 10) {          // same row: straight
+    const [L, R] = A.x < B.x ? [A, B] : [B, A];
+    d = `M${L.x + L.w},${L.y + H/2} L${R.x - 6},${R.y + H/2}`;
+    if (A.x > B.x) d = `M${A.x},${A.y + H/2} L${B.x + B.w + 6},${B.y + H/2}`;
+  } else if (A.x === B.x) {                 // same column: vertical
+    const top = A.y < B.y ? A : B, bot = A.y < B.y ? B : A;
+    d = A.y < B.y
+      ? `M${A.x + A.w/2},${A.y + H} L${B.x + B.w/2},${B.y - 6}`
+      : `M${A.x + A.w/2},${A.y} L${B.x + B.w/2},${B.y + H + 6}`;
+  } else {                                  // elbow
+    const sx = A.x + A.w, sy = A.y + H/2, tx = B.x + B.w/2, ty = B.y > A.y ? B.y - 6 : B.y + H + 6;
+    if (B.y > A.y) d = `M${sx},${sy} L${tx},${sy} L${tx},${ty}`;
+    else d = `M${sx},${sy} L${tx},${sy} L${tx},${ty}`;
+  }
+  const p = el('path', { d, class:'edge' + (style === 'dashed' ? ' dashed' : ''), 'marker-end':'url(#arr)' });
+  edgeEls[a + '>' + b] = p;
+});
+
+NODES.forEach(n => {
+  const g = el('g', { class:'node', id:'n-' + n.id, tabindex:'0', role:'button', 'aria-label':n.title });
+  el('rect', { x:n.x, y:n.y, width:n.w, height:H, rx:9 }, g);
+  const t1 = el('text', { x:n.x + 12, y:n.y + 26, class:'t' }, g); t1.textContent = n.title;
+  const t2 = el('text', { x:n.x + 12, y:n.y + 45, class:'s' }, g); t2.textContent = n.sub;
+  g.addEventListener('click', () => selectNode(n.id));
+  g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectNode(n.id); } });
+  nodeById[n.id] = g;
+});
+
+const detail = document.getElementById('detail');
+function selectNode(id) {
+  document.querySelectorAll('.node.active').forEach(x => x.classList.remove('active'));
+  nodeById[id].classList.add('active');
+  const n = NODES.find(x => x.id === id);
+  detail.innerHTML =
+    `<span class="badge">${n.badge}</span>` +
+    `<h3>${n.title}</h3><p>${n.desc}</p>` +
+    `<pre>${n.code.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre>` +
+    `<a class="filelink" href="${GH}${n.file}">${n.file} ↗</a>`;
+}
+selectNode('daily');
+
+/* ================= day player ================= */
+const STEPS = [
+  { t:'Resolve widgets', b:'A blank <code>TARGET_DATE</code> means yesterday; <code>SCALE_FACTOR</code> defaults to 1.0 ≈ 100K rows. Everything downstream is a function of this one date.', lit:['daily'] },
+  { t:'Determinism locked in', b:'RNG seeded with the date; <code>ID_START = days_since_2020-01-01 × 10M</code>. This day now owns IDs that no other day can ever mint.', lit:['daily'] },
+  { t:'Generate 13 fact tables', b:'pandas + numpy build sales, work orders, invoices, payments… ~30% of sales get <code>customer_id = NULL</code> (walk-ins) and dates stay real <code>datetime.date</code> objects → parquet date32.', lit:['daily'] },
+  { t:'Land parquet on the volume', b:'Files written hive-partitioned (<code>year=/month=</code>). <code>fact_employee_schedules</code> is written <b>last</b> — its presence marks the date complete, which is what backfill checks.', lit:['daily','volume'], e:['daily>volume'] },
+  { t:'Auto Loader wakes up', b:'<code>cloudFiles</code> compares the directory against its checkpoint and picks up only files it has never seen. Re-run yesterday? Those duplicate files are "new" too — and they get ingested.', lit:['volume','autoloader'], e:['volume>autoloader'] },
+  { t:'Bronze append', b:'13 streams append into <code>car_workshop.fact.*</code>. No dedup here, on purpose: bronze is the record of what arrived, warts included.', lit:['autoloader','bronze'], e:['autoloader>bronze'] },
+  { t:'Silver: dedup + quality rules', b:'foreachBatch dedups the batch, then rules fire: negative amounts, broken FKs, sentinel zeros… each failure appends to <code>_reject_reason</code>.', lit:['bronze','silver'], e:['bronze>silver'] },
+  { t:'Split: quarantine…', b:'Rejects are appended to <code>*_quarantine</code> with their reasons — queryable evidence, not a silent drop.', lit:['silver','quarantine'], e:['silver>quarantine'] },
+  { t:'…and idempotent MERGE', b:'Valid rows go through insert-only <code>MERGE</code> on the business key. The duplicates that bronze accepted? Matched → skipped. The pipeline is now safe to re-run end to end.', lit:['silver','silvertbl'], e:['silver>silvertbl'] },
+];
+
+let step = -1, timer = null;
+const narr = document.getElementById('narr');
+const dots = document.getElementById('dots');
+STEPS.forEach(() => { const d = document.createElement('div'); d.className = 'dot'; dots.appendChild(d); });
+
+function renderStep() {
+  document.querySelectorAll('.node.lit').forEach(x => x.classList.remove('lit'));
+  document.querySelectorAll('.edge.lit').forEach(x => x.classList.remove('lit'));
+  [...dots.children].forEach((d, i) => d.className = 'dot' + (i < step ? ' done' : i === step ? ' now' : ''));
+  if (step < 0) { narr.innerHTML = '<div class="sn-title">Ready.</div><div class="sn-body">Press ▶ Play — or step manually with the arrows.</div>'; return; }
+  const s = STEPS[step];
+  narr.innerHTML = `<div class="sn-title">Step ${step + 1}/${STEPS.length} — ${s.t}</div><div class="sn-body">${s.b}</div>`;
+  (s.lit || []).forEach(id => nodeById[id].classList.add('lit'));
+  (s.e || []).forEach(k => edgeEls[k] && edgeEls[k].classList.add('lit'));
+  document.getElementById('prevBtn').disabled = step <= 0;
+  document.getElementById('nextBtn').disabled = step >= STEPS.length - 1;
+}
+function stopPlay() { if (timer) { clearInterval(timer); timer = null; document.getElementById('playBtn').textContent = '▶ Play'; } }
+document.getElementById('playBtn').addEventListener('click', () => {
+  if (timer) { stopPlay(); return; }
+  if (step >= STEPS.length - 1) step = -1;
+  document.getElementById('playBtn').textContent = '⏸ Pause';
+  const tick = () => { if (step >= STEPS.length - 1) { stopPlay(); return; } step++; renderStep(); };
+  tick(); timer = setInterval(tick, 3200);
+});
+document.getElementById('nextBtn').addEventListener('click', () => { stopPlay(); if (step < STEPS.length - 1) { step++; renderStep(); } });
+document.getElementById('prevBtn').addEventListener('click', () => { stopPlay(); if (step > 0) { step--; renderStep(); } });
+renderStep();
+
+/* ================= api pagination demo ================= */
+const PAGES = [{"data": [{"transaction_id": 24130000000,"transaction_code": "TRX-20260810-000000","location_id": 37,"customer_id": 14611,"employee_id": 876,"transaction_date": "2026-08-10","payment_method": "card","receipt_number": "RCP/2026/08/10/237089"},{"transaction_id": 24130000001,"transaction_code": "TRX-20260810-000001","location_id": 46,"customer_id": 1918,"employee_id": 1059,"transaction_date": "2026-08-10","payment_method": "card","receipt_number": "RCP/2026/08/10/688135"},{"transaction_id": 24130000002,"transaction_code": "TRX-20260810-000002","location_id": 87,"customer_id": 9039,"employee_id": 1403,"transaction_date": "2026-08-10","payment_method": "leasing","receipt_number": "RCP/2026/08/10/371531"},{"transaction_id": 24130000003,"transaction_code": "TRX-20260810-000003","location_id": 53,"customer_id": 6951,"employee_id": 575,"transaction_date": "2026-08-10","payment_method": "bank_transfer","receipt_number": "RCP/2026/08/10/756755"},{"transaction_id": 24130000004,"transaction_code": "TRX-20260810-000004","location_id": 89,"customer_id": null,"employee_id": 20,"transaction_date": "2026-08-10","payment_method": "cash","receipt_number": "RCP/2026/08/10/858258"}],"count": 5,"next_cursor": "MjAyNi0wOC0xMDo1"},{"data": [{"transaction_id": 24130000005,"transaction_code": "TRX-20260810-000005","location_id": 1,"customer_id": null,"employee_id": 52,"transaction_date": "2026-08-10","payment_method": "card","receipt_number": "RCP/2026/08/10/957477"},{"transaction_id": 24130000006,"transaction_code": "TRX-20260810-000006","location_id": 53,"customer_id": 49487,"employee_id": 724,"transaction_date": "2026-08-10","payment_method": "card","receipt_number": "RCP/2026/08/10/422252"},{"transaction_id": 24130000007,"transaction_code": "TRX-20260810-000007","location_id": 61,"customer_id": null,"employee_id": 396,"transaction_date": "2026-08-10","payment_method": "cash","receipt_number": "RCP/2026/08/10/961007"},{"transaction_id": 24130000008,"transaction_code": "TRX-20260810-000008","location_id": 39,"customer_id": null,"employee_id": 530,"transaction_date": "2026-08-10","payment_method": "card","receipt_number": "RCP/2026/08/10/613075"},{"transaction_id": 24130000009,"transaction_code": "TRX-20260810-000009","location_id": 5,"customer_id": 19613,"employee_id": 1514,"transaction_date": "2026-08-10","payment_method": "cash","receipt_number": "RCP/2026/08/10/802347"}],"count": 5,"next_cursor": "MjAyNi0wOC0xMDoxMA=="},{"data": [{"transaction_id": 24130000010,"transaction_code": "TRX-20260810-000010","location_id": 41,"customer_id": 30427,"employee_id": 483,"transaction_date": "2026-08-10","payment_method": "card","receipt_number": "RCP/2026/08/10/881255"},{"transaction_id": 24130000011,"transaction_code": "TRX-20260810-000011","location_id": 84,"customer_id": 24129,"employee_id": 937,"transaction_date": "2026-08-10","payment_method": "card","receipt_number": "RCP/2026/08/10/121407"},{"transaction_id": 24130000012,"transaction_code": "TRX-20260810-000012","location_id": 56,"customer_id": 40164,"employee_id": 145,"transaction_date": "2026-08-10","payment_method": "cash","receipt_number": "RCP/2026/08/10/664643"},{"transaction_id": 24130000013,"transaction_code": "TRX-20260810-000013","location_id": 88,"customer_id": 28092,"employee_id": 489,"transaction_date": "2026-08-10","payment_method": "BLIK","receipt_number": "RCP/2026/08/10/844693"},{"transaction_id": 24130000014,"transaction_code": "TRX-20260810-000014","location_id": 94,"customer_id": 29987,"employee_id": 1262,"transaction_date": "2026-08-10","payment_method": "bank_transfer","receipt_number": "RCP/2026/08/10/696909"}],"count": 5,"next_cursor": "MjAyNi0wOC0xMDoxNQ=="}];
+
+const REQS = [
+  "GET /sales?date=2026-08-10&page_size=5",
+  "GET /sales?date=2026-08-10&page_size=5&cursor=MjAyNi0wOC0xMDo1",
+  "GET /sales?date=2026-08-10&page_size=5&cursor=MjAyNi0wOC0xMDoxMA==",
+];
+
+let pageIdx = 0;
+const termbody = document.getElementById('termbody');
+const pageLbl = document.getElementById('pageLbl');
+
+function hlJson(obj) {
+  return JSON.stringify(obj, null, 2)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span class="json-str">"$1"</span>')
+    .replace(/: (\d+)/g, ': <span class="json-num">$1</span>')
+    .replace(/: null/g, ': <span class="json-null">null</span>');
+}
+function renderPage() {
+  pageLbl.textContent = `page ${pageIdx + 1} / ${PAGES.length}`;
+  const last = pageIdx === PAGES.length - 1;
+  termbody.innerHTML =
+    `<div class="req">$ ${REQS[pageIdx]}\nHTTP/1.1 200 OK\n</div>` +
+    hlJson(PAGES[pageIdx]) +
+    (last ? `\n<div style="color:var(--muted)">… and so on, following next_cursor until it is null\n(2 000 rows/day → 400 pages at this size)</div>` : '');
+  document.getElementById('nextPage').disabled = last;
+}
+document.getElementById('nextPage').addEventListener('click', () => { if (pageIdx < PAGES.length - 1) { pageIdx++; renderPage(); } });
+document.getElementById('resetPages').addEventListener('click', () => { pageIdx = 0; renderPage(); });
+document.getElementById('peekBtn').addEventListener('click', () => {
+  const p = document.getElementById('peek');
+  p.classList.toggle('show');
+  p.innerHTML = `atob("MjAyNi0wOC0xMDo1") → <b>"2026-08-10:5"</b><br>` +
+    `<span style="color:var(--muted)">date + offset, base64. The server validates both and rejects ` +
+    `cross-date or malformed cursors with 400 — clients that parse cursors break the day the format changes.</span>`;
+});
+renderPage();
+</script>
+</body>
+</html>
