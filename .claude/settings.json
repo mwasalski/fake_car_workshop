@@ -8,7 +8,11 @@
       "Bash(python3 -c \"import yaml; yaml.safe_load\\(open\\('.github/workflows/ci.yaml'\\)\\); print\\('yaml OK'\\)\")",
       "Bash(gh --version)",
       "Bash(gh auth *)",
-      "Bash(python3 -c \"import yaml; yaml.safe_load\\(open\\('.github/workflows/docs.yaml'\\)\\); print\\('yaml OK'\\)\")"
+      "Bash(python3 -c \"import yaml; yaml.safe_load\\(open\\('.github/workflows/docs.yaml'\\)\\); print\\('yaml OK'\\)\")",
+      "Bash(git mv *)",
+      "Bash(/private/tmp/claude-501/-Users-mateusz-Desktop-git-fake-car-workshop/a45e05e2-c759-4bae-afec-61500f2e6026/scratchpad/apivenv/bin/python scripts/build_docs_data.py)",
+      "Bash(node --check /private/tmp/claude-501/-Users-mateusz-Desktop-git-fake-car-workshop/a45e05e2-c759-4bae-afec-61500f2e6026/scratchpad/page.js)",
+      "Bash(python3 -c \"import yaml; yaml.safe_load\\(open\\('.github/workflows/docs.yaml'\\)\\); yaml.safe_load\\(open\\('.github/workflows/ci.yaml'\\)\\); print\\('workflows OK'\\)\")"
     ]
   }
 }

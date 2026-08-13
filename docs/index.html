@@ -168,8 +168,8 @@
       so their medallion pipeline, quality gates and REST ingestion can be broken,
       profiled and fixed on purpose. This page walks through how it works.</p>
     <div class="chips">
-      <span class="chip"><b>20</b> Delta tables</span>
-      <span class="chip"><b>13</b> daily fact feeds</span>
+      <span class="chip"><b id="c-tables">20</b> Delta tables</span>
+      <span class="chip"><b id="c-facts">13</b> daily fact feeds</span>
       <span class="chip"><b>~100K</b> rows/day (scales to 10M)</span>
       <span class="chip"><b>seed=date</b> → fully reproducible</span>
       <span class="chip">bronze → silver + quarantine</span>
@@ -309,9 +309,9 @@
         <div class="ls">files via /Volumes/…, Delta tables on your own path</div></div>
     </div>
     <p class="sub">The whole chain is code: an <a
-      href="https://github.com/mwasalski/fake_car_workshop/blob/main/setup_adls_azure.md">az-cli
+      href="https://github.com/mwasalski/fake_car_workshop/blob/main/infra/setup_adls_azure.md">az-cli
       walkthrough</a>, plain <a
-      href="https://github.com/mwasalski/fake_car_workshop/blob/main/create_external_adls.sql">SQL</a>,
+      href="https://github.com/mwasalski/fake_car_workshop/blob/main/infra/create_external_adls.sql">SQL</a>,
       and a <a href="https://github.com/mwasalski/fake_car_workshop/tree/main/terraform">Terraform
       module</a> that replaces both.</p>
   </div>
@@ -328,6 +328,12 @@
 /* ================= pipeline map ================= */
 const GH = 'https://github.com/mwasalski/fake_car_workshop/blob/main/';
 
+/*__DOCS_DATA_START__*/
+const DOCS = {"table_count": 20, "fact_tables": ["fact_appointments", "fact_customer_feedback", "fact_employee_schedules", "fact_inventory_movements", "fact_invoices", "fact_loyalty_program", "fact_payments", "fact_purchase_order_items", "fact_purchase_orders", "fact_sales_items", "fact_sales_transactions", "fact_work_order_items", "fact_work_orders"], "dim_tables": ["dim_customers", "dim_employees", "dim_locations", "dim_products", "dim_services", "dim_suppliers", "dim_vehicles"], "partitioned": ["fact_appointments", "fact_inventory_movements", "fact_invoices", "fact_payments", "fact_purchase_orders", "fact_sales_transactions", "fact_work_orders"]};
+/*__DOCS_DATA_END__*/
+document.getElementById('c-tables').textContent = DOCS.table_count;
+document.getElementById('c-facts').textContent = DOCS.fact_tables.length;
+
 const NODES = [
   { id:'ddl',       x:20,  y:60,  w:180, title:'create_tables.sql', sub:'DDL · once',        badge:'one-time',
     desc:'Creates the <b>car_workshop</b> catalog, schemas (dim/fact/silver/lab), volumes and all 20 empty Delta tables. Idempotent — <code>IF NOT EXISTS</code> everywhere.',
@@ -337,7 +343,7 @@ const NODES = [
     desc:'Loads 7 dimension tables (customers, employees, locations, vehicles…) with <b>seed 42</b> — a direct Delta overwrite, safe to re-run. Dims do <b>not</b> flow through Auto Loader.',
     code:"rng = np.random.default_rng(42)\ndf.write.mode('overwrite') \\\n  .saveAsTable('car_workshop.dim.dim_customers')",
     file:'initial_dims.ipynb' },
-  { id:'daily',     x:20,  y:170, w:180, title:'daily.ipynb', sub:'13 fact generators',      badge:'daily',
+  { id:'daily',     x:20,  y:170, w:180, title:'daily.ipynb', sub:`${DOCS.fact_tables.length} fact generators`,      badge:'daily',
     desc:'Generates ~100K rows across 13 fact tables. <b>Seed = TARGET_DATE</b>, and every day owns a disjoint 10M ID block — re-running a date reproduces identical rows, and IDs never collide across days.',
     code:"ID_BLOCK = 10_000_000\nID_START = (TARGET_DATE - date(2020,1,1)).days * ID_BLOCK\nrng = np.random.default_rng(int(TARGET_DATE.strftime('%Y%m%d')))",
     file:'daily.ipynb' },
@@ -350,11 +356,11 @@ const NODES = [
     code:'/Volumes/car_workshop/fact/fact_files/\n  fact_sales_transactions/year=2026/month=8/\n    part-….parquet',
     file:'table_schemas.py' },
   { id:'autoloader',x:540, y:170, w:180, title:'autoloader.ipynb', sub:'cloudFiles stream',   badge:'daily',
-    desc:'Incremental ingest: Auto Loader tracks already-seen files in a checkpoint, so each run picks up <b>only new files</b>. 13 streams, one per fact table.',
+    desc:`Incremental ingest: Auto Loader tracks already-seen files in a checkpoint, so each run picks up <b>only new files</b>. ${DOCS.fact_tables.length} streams, one per fact table.`,
     code:"spark.readStream.format('cloudFiles')\\\n  .option('cloudFiles.format','parquet')\\\n  .option('cloudFiles.schemaLocation', ckpt)\\\n  .load(src)",
     file:'autoloader.ipynb' },
-  { id:'bronze',    x:760, y:170, w:180, title:'car_workshop.fact.*', sub:'bronze · 13 tables', badge:'delta',
-    desc:'Raw facts, append-only. Duplicates from re-runs land here <b>by design</b> — bronze preserves what arrived; deduplication is silver\'s job.',
+  { id:'bronze',    x:760, y:170, w:180, title:'car_workshop.fact.*', sub:`bronze · ${DOCS.fact_tables.length} tables`, badge:'delta',
+    desc:`Raw facts, append-only. Duplicates from re-runs land here <b>by design</b> — deduplication is silver's job. Tables: <code>${DOCS.fact_tables.join('</code>, <code>')}</code>.`,
     code:'SELECT count(*) FROM car_workshop.fact\n  .fact_sales_transactions;  -- grows daily',
     file:'create_tables.sql' },
   { id:'silver',    x:540, y:300, w:180, title:'silver stream', sub:'foreachBatch + rules',   badge:'daily',
@@ -380,7 +386,7 @@ const NODES = [
   { id:'adls',      x:540, y:470, w:180, title:'ADLS Gen2 landing', sub:'UC external volume', badge:'api track',
     desc:'External volume governed by Unity Catalog (see section 05). Files dropped here flow into the <b>same</b> Auto Loader → bronze → silver path as the daily generator.',
     code:"abfss://landing@….dfs.core.windows.net/\n  volumes/fact_landing/",
-    file:'create_external_adls.sql' },
+    file:'infra/create_external_adls.sql' },
 ];
 
 const EDGES = [
@@ -502,7 +508,9 @@ document.getElementById('prevBtn').addEventListener('click', () => { stopPlay();
 renderStep();
 
 /* ================= api pagination demo ================= */
-const PAGES = [{"data": [{"transaction_id": 24130000000,"transaction_code": "TRX-20260810-000000","location_id": 37,"customer_id": 14611,"employee_id": 876,"transaction_date": "2026-08-10","payment_method": "card","receipt_number": "RCP/2026/08/10/237089"},{"transaction_id": 24130000001,"transaction_code": "TRX-20260810-000001","location_id": 46,"customer_id": 1918,"employee_id": 1059,"transaction_date": "2026-08-10","payment_method": "card","receipt_number": "RCP/2026/08/10/688135"},{"transaction_id": 24130000002,"transaction_code": "TRX-20260810-000002","location_id": 87,"customer_id": 9039,"employee_id": 1403,"transaction_date": "2026-08-10","payment_method": "leasing","receipt_number": "RCP/2026/08/10/371531"},{"transaction_id": 24130000003,"transaction_code": "TRX-20260810-000003","location_id": 53,"customer_id": 6951,"employee_id": 575,"transaction_date": "2026-08-10","payment_method": "bank_transfer","receipt_number": "RCP/2026/08/10/756755"},{"transaction_id": 24130000004,"transaction_code": "TRX-20260810-000004","location_id": 89,"customer_id": null,"employee_id": 20,"transaction_date": "2026-08-10","payment_method": "cash","receipt_number": "RCP/2026/08/10/858258"}],"count": 5,"next_cursor": "MjAyNi0wOC0xMDo1"},{"data": [{"transaction_id": 24130000005,"transaction_code": "TRX-20260810-000005","location_id": 1,"customer_id": null,"employee_id": 52,"transaction_date": "2026-08-10","payment_method": "card","receipt_number": "RCP/2026/08/10/957477"},{"transaction_id": 24130000006,"transaction_code": "TRX-20260810-000006","location_id": 53,"customer_id": 49487,"employee_id": 724,"transaction_date": "2026-08-10","payment_method": "card","receipt_number": "RCP/2026/08/10/422252"},{"transaction_id": 24130000007,"transaction_code": "TRX-20260810-000007","location_id": 61,"customer_id": null,"employee_id": 396,"transaction_date": "2026-08-10","payment_method": "cash","receipt_number": "RCP/2026/08/10/961007"},{"transaction_id": 24130000008,"transaction_code": "TRX-20260810-000008","location_id": 39,"customer_id": null,"employee_id": 530,"transaction_date": "2026-08-10","payment_method": "card","receipt_number": "RCP/2026/08/10/613075"},{"transaction_id": 24130000009,"transaction_code": "TRX-20260810-000009","location_id": 5,"customer_id": 19613,"employee_id": 1514,"transaction_date": "2026-08-10","payment_method": "cash","receipt_number": "RCP/2026/08/10/802347"}],"count": 5,"next_cursor": "MjAyNi0wOC0xMDoxMA=="},{"data": [{"transaction_id": 24130000010,"transaction_code": "TRX-20260810-000010","location_id": 41,"customer_id": 30427,"employee_id": 483,"transaction_date": "2026-08-10","payment_method": "card","receipt_number": "RCP/2026/08/10/881255"},{"transaction_id": 24130000011,"transaction_code": "TRX-20260810-000011","location_id": 84,"customer_id": 24129,"employee_id": 937,"transaction_date": "2026-08-10","payment_method": "card","receipt_number": "RCP/2026/08/10/121407"},{"transaction_id": 24130000012,"transaction_code": "TRX-20260810-000012","location_id": 56,"customer_id": 40164,"employee_id": 145,"transaction_date": "2026-08-10","payment_method": "cash","receipt_number": "RCP/2026/08/10/664643"},{"transaction_id": 24130000013,"transaction_code": "TRX-20260810-000013","location_id": 88,"customer_id": 28092,"employee_id": 489,"transaction_date": "2026-08-10","payment_method": "BLIK","receipt_number": "RCP/2026/08/10/844693"},{"transaction_id": 24130000014,"transaction_code": "TRX-20260810-000014","location_id": 94,"customer_id": 29987,"employee_id": 1262,"transaction_date": "2026-08-10","payment_method": "bank_transfer","receipt_number": "RCP/2026/08/10/696909"}],"count": 5,"next_cursor": "MjAyNi0wOC0xMDoxNQ=="}];
+/*__API_PAGES_START__*/
+const PAGES = [{"data": [{"transaction_id": 24130000000, "transaction_code": "TRX-20260810-000000", "location_id": 37, "customer_id": 14611, "employee_id": 876, "transaction_date": "2026-08-10", "payment_method": "card", "receipt_number": "RCP/2026/08/10/237089"}, {"transaction_id": 24130000001, "transaction_code": "TRX-20260810-000001", "location_id": 46, "customer_id": 1918, "employee_id": 1059, "transaction_date": "2026-08-10", "payment_method": "card", "receipt_number": "RCP/2026/08/10/688135"}, {"transaction_id": 24130000002, "transaction_code": "TRX-20260810-000002", "location_id": 87, "customer_id": 9039, "employee_id": 1403, "transaction_date": "2026-08-10", "payment_method": "leasing", "receipt_number": "RCP/2026/08/10/371531"}, {"transaction_id": 24130000003, "transaction_code": "TRX-20260810-000003", "location_id": 53, "customer_id": 6951, "employee_id": 575, "transaction_date": "2026-08-10", "payment_method": "bank_transfer", "receipt_number": "RCP/2026/08/10/756755"}, {"transaction_id": 24130000004, "transaction_code": "TRX-20260810-000004", "location_id": 89, "customer_id": null, "employee_id": 20, "transaction_date": "2026-08-10", "payment_method": "cash", "receipt_number": "RCP/2026/08/10/858258"}], "count": 5, "next_cursor": "MjAyNi0wOC0xMDo1"}, {"data": [{"transaction_id": 24130000005, "transaction_code": "TRX-20260810-000005", "location_id": 1, "customer_id": null, "employee_id": 52, "transaction_date": "2026-08-10", "payment_method": "card", "receipt_number": "RCP/2026/08/10/957477"}, {"transaction_id": 24130000006, "transaction_code": "TRX-20260810-000006", "location_id": 53, "customer_id": 49487, "employee_id": 724, "transaction_date": "2026-08-10", "payment_method": "card", "receipt_number": "RCP/2026/08/10/422252"}, {"transaction_id": 24130000007, "transaction_code": "TRX-20260810-000007", "location_id": 61, "customer_id": null, "employee_id": 396, "transaction_date": "2026-08-10", "payment_method": "cash", "receipt_number": "RCP/2026/08/10/961007"}, {"transaction_id": 24130000008, "transaction_code": "TRX-20260810-000008", "location_id": 39, "customer_id": null, "employee_id": 530, "transaction_date": "2026-08-10", "payment_method": "card", "receipt_number": "RCP/2026/08/10/613075"}, {"transaction_id": 24130000009, "transaction_code": "TRX-20260810-000009", "location_id": 5, "customer_id": 19613, "employee_id": 1514, "transaction_date": "2026-08-10", "payment_method": "cash", "receipt_number": "RCP/2026/08/10/802347"}], "count": 5, "next_cursor": "MjAyNi0wOC0xMDoxMA=="}, {"data": [{"transaction_id": 24130000010, "transaction_code": "TRX-20260810-000010", "location_id": 41, "customer_id": 30427, "employee_id": 483, "transaction_date": "2026-08-10", "payment_method": "card", "receipt_number": "RCP/2026/08/10/881255"}, {"transaction_id": 24130000011, "transaction_code": "TRX-20260810-000011", "location_id": 84, "customer_id": 24129, "employee_id": 937, "transaction_date": "2026-08-10", "payment_method": "card", "receipt_number": "RCP/2026/08/10/121407"}, {"transaction_id": 24130000012, "transaction_code": "TRX-20260810-000012", "location_id": 56, "customer_id": 40164, "employee_id": 145, "transaction_date": "2026-08-10", "payment_method": "cash", "receipt_number": "RCP/2026/08/10/664643"}, {"transaction_id": 24130000013, "transaction_code": "TRX-20260810-000013", "location_id": 88, "customer_id": 28092, "employee_id": 489, "transaction_date": "2026-08-10", "payment_method": "BLIK", "receipt_number": "RCP/2026/08/10/844693"}, {"transaction_id": 24130000014, "transaction_code": "TRX-20260810-000014", "location_id": 94, "customer_id": 29987, "employee_id": 1262, "transaction_date": "2026-08-10", "payment_method": "bank_transfer", "receipt_number": "RCP/2026/08/10/696909"}], "count": 5, "next_cursor": "MjAyNi0wOC0xMDoxNQ=="}];
+/*__API_PAGES_END__*/
 
 const REQS = [
   "GET /sales?date=2026-08-10&page_size=5",
