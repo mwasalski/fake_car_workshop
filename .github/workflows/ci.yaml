@@ -1,0 +1,33 @@
+name: CI
+
+on: # when this workflow runs
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["new-arch"] # daily work happens here - CI must run where you push
+  workflow_dispatch: # manual "Run workflow" button in the Actions tab
+
+jobs:
+  python-checks:
+    runs-on: ubuntu-latest # fresh VM per job - nothing survives between runs
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1 # without this the VM is EMPTY - no repo
+
+      - name: Setup Python
+        uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip # caches ~/.cache/pip between runs, keyed on requirements
+
+      - name: Compile-check shared modules
+        run: python -m py_compile reference_data.py table_schemas.py
+
+      - name: Syntax-check notebook code cells
+        run: python scripts/check_notebooks.py
+
+      - name: API smoke test
+        run: |
+          pip install -r api/requirements.txt
+          python scripts/api_smoke.py

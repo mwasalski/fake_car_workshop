@@ -1,0 +1,87 @@
+resources:
+  jobs:
+    enginering_metrics_ingest_jira:
+      name: enginering_metrics_ingest_jira
+
+      tags:
+        cost_center: ${var.cost_center}
+        custodian: ${var.custodian}
+        customer_id: ${var.customer_id}
+        data_type: ${var.data_type}
+        environment: ${var.catalog}
+        owner: ${var.owner}
+        project: ${var.project}
+        region: ${var.region}
+
+      schedule:
+        quartz_cron_expression: "0 0 7 * * ?"
+        timezone_id: "Europe/London"
+
+      email_notifications:
+        on_failure:
+          - ok@cc.com
+          - mm@ss.com
+          - mm@cc.com
+
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: source_system
+          default: ${var.source_system}
+        - name: is_prod_run
+          default: ${var.is_prod_run}
+        - name: client_code_name
+          default: ${var.customer_id}
+
+      tasks:
+        - task_key: jiraelt_check_connection
+          environment_key: default
+          spark_python_task:
+            python_file: /Workspace/Shared/DataBricks.Python/streaming_architecture/jira/check_connection_jira.py
+
+        - task_key: a_data_fetch_jira
+          depends_on:
+            - task_key: jiraelt_check_connection
+          environment_key: default
+          notebook_task:
+            notebook_path: /Workspace/Shared/DataBricks.Python/streaming_architecture/jira/a_data_fetch_jira
+            source: WORKSPACE
+
+        - task_key: a_data_fetch_sprints_jira
+          depends_on:
+            - task_key: a_data_fetch_jira
+          environment_key: default
+          notebook_task:
+            notebook_path: /Workspace/Shared/mm@cc.comDataBricks.Python/streaming_architecture/jira/a_data_fetch_sprints_jira
+            source: WORKSPACE
+
+        - task_key: a_dependencies_data_fetch_jira
+          depends_on:
+            - task_key: a_data_fetch_sprints_jira
+          environment_key: default
+          notebook_task:
+            notebook_path: /Workspace/Shared/mm@cc.comDataBricks.Python/streaming_architecture/jira/a_dependencies_data_fetch_jira
+            source: WORKSPACE
+
+        - task_key: b_bronze_jira
+          depends_on:
+            - task_key: a_dependencies_data_fetch_jira
+          environment_key: default
+          notebook_task:
+            notebook_path: /Workspace/Shared/mm@cc.comDataBricks.Python/streaming_architecture/jira/b_bronze_jira
+            source: WORKSPACE
+
+        - task_key: c_silver_jira
+          depends_on:
+            - task_key: b_bronze_jira
+          environment_key: default
+          notebook_task:
+            notebook_path: /Workspace/Shared/mm@cc.comDataBricks.Python/streaming_architecture/jira/c_silver
+            source: WORKSPACE
+
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "5"
