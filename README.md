@@ -31,6 +31,11 @@ run_all.ipynb                orchestrator: setup + daily cycle via %run
 | `testing/` | data checks: row counts & sizes, NULL audit, duplicate checks (see `testing/README.md`) |
 | `learning/` | exam-prep notebooks: skew, salting, shuffle, Auto Loader, CDC, CDF, Delta internals (uses a disposable `car_workshop.lab` schema) |
 | `delete_truncate.sql` | cleanup snippets: DELETE / TRUNCATE / DROP for all tables |
+| `api/` | FastAPI sales endpoint – API-ingestion sparring ground (see `api/README.md`) |
+| `infra/` | Azure side of external storage: ADLS Gen2 + UC setup (az-cli walkthrough + SQL) |
+| `terraform/` | the same ADLS/UC chain as code (see `terraform/README.md`) |
+| `scripts/` | CI helpers: notebook syntax check, API smoke test, docs data builder |
+| `docs/` | interactive manual published via GitHub Pages (built data: `scripts/build_docs_data.py`) |
 | `car_workshop_ab/` | Databricks Asset Bundle scaffold (`databricks bundle init`) – DABs learning ground, still contains template sample code |
 | `.claude/skills/` | Claude Code sparring-partner skills: `/de-sparring` (senior DE) and `/da-mentor` (Data Architect path) |
 

@@ -1,6 +1,6 @@
 # Terraform manual — ADLS Gen2 + Unity Catalog from zero
 
-This walks through building the whole [setup_adls_azure.md](../setup_adls_azure.md)
+This walks through building the whole [setup_adls_azure.md](../infra/setup_adls_azure.md)
 chain as code: from an empty folder, file by file, to `terraform apply` and teardown.
 The files described here already exist in this directory — the manual explains what
 each one is for and in what order you would create them yourself.
@@ -202,7 +202,7 @@ dbutils.fs.ls('/Volumes/car_workshop/fact/adls_landing/')
 ```
 
 External *tables* on this location remain a SQL job — section 4 of
-[create_external_adls.sql](../create_external_adls.sql), with the storage
+[create_external_adls.sql](../infra/create_external_adls.sql), with the storage
 account name from `terraform output`.
 
 ---
