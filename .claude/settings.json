@@ -12,7 +12,16 @@
       "Bash(git mv *)",
       "Bash(/private/tmp/claude-501/-Users-mateusz-Desktop-git-fake-car-workshop/a45e05e2-c759-4bae-afec-61500f2e6026/scratchpad/apivenv/bin/python scripts/build_docs_data.py)",
       "Bash(node --check /private/tmp/claude-501/-Users-mateusz-Desktop-git-fake-car-workshop/a45e05e2-c759-4bae-afec-61500f2e6026/scratchpad/page.js)",
-      "Bash(python3 -c \"import yaml; yaml.safe_load\\(open\\('.github/workflows/docs.yaml'\\)\\); yaml.safe_load\\(open\\('.github/workflows/ci.yaml'\\)\\); print\\('workflows OK'\\)\")"
+      "Bash(python3 -c \"import yaml; yaml.safe_load\\(open\\('.github/workflows/docs.yaml'\\)\\); yaml.safe_load\\(open\\('.github/workflows/ci.yaml'\\)\\); print\\('workflows OK'\\)\")",
+      "Bash(grep -n -o -E '.{0,80}\\(initial_dims|saveAsTable|direct Delta|dim_files|dim_landing|managed|external|adls_landing|overwrite\\){1}.{0,80}' docs/index.html)",
+      "Bash(awk '/const STEPS/,/^\\\\];/' docs/index.html)",
+      "Bash(python3 -m pip show fastapi starlette httpx)",
+      "Bash(python3 -m pip install -q -U -r api/requirements.txt)",
+      "Bash(python3 scripts/build_docs_data.py)",
+      "Bash(sed -n '/<script>/,/<\\\\/script>/p' docs/index.html)",
+      "Bash(sed '1d;$d')",
+      "Bash(node --check /private/tmp/claude-501/-Users-mateusz-Desktop-git-fake-car-workshop/a45e05e2-c759-4bae-afec-61500f2e6026/scratchpad/docs_inline.js)",
+      "Bash(python3 scripts/api_smoke.py)"
     ]
   }
 }

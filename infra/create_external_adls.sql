@@ -88,6 +88,13 @@ CREATE EXTERNAL VOLUME IF NOT EXISTS car_workshop.fact.adls_landing
 --   dbutils.fs.ls('/Volumes/car_workshop/fact/adls_landing/')
 --   df.write.parquet('/Volumes/car_workshop/fact/adls_landing/some_dump/')
 
+-- Landing zone for dimension snapshots: initial_dims.ipynb writes parquet
+-- here (one folder per table); loading into car_workshop.dim.* is a
+-- separate ingestion step.
+CREATE EXTERNAL VOLUME IF NOT EXISTS car_workshop.dim.dim_landing
+  LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/volumes/dim_landing'
+  COMMENT 'External volume on ADLS - parquet snapshots of dimension source data';
+
 -- -------------------------------------------------------------
 -- 4. EXTERNAL TABLE (Delta table living on ADLS)
 -- -------------------------------------------------------------
