@@ -153,6 +153,36 @@
   .link-box .ls { color: var(--muted); font-size: 12px; margin-top: 3px; }
   .chain .arr { align-self: center; color: var(--bronze); font-size: 20px; padding: 0 10px; font-family: var(--mono); }
 
+  /* ---------- data model explorer ---------- */
+  .model-grid { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .model-grid { grid-template-columns: 1fr; } }
+  .tbl-list { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+  .tbl-group { font: 700 10.5px var(--mono); letter-spacing: 1.5px; color: #5a7590; margin: 12px 4px 6px; text-transform: uppercase; }
+  .tbl-group:first-child { margin-top: 2px; }
+  .tbl-btn { display: flex; justify-content: space-between; gap: 8px; width: 100%; text-align: left; font: 13px var(--mono);
+             padding: 7px 10px; border-radius: 7px; border: 1px solid transparent; background: none; color: var(--text); cursor: pointer; }
+  .tbl-btn:hover { border-color: var(--blue); }
+  .tbl-btn.on { background: var(--panel2); border-color: var(--gold); }
+  .tbl-btn .cc { color: var(--muted); }
+  .tbl-detail { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .tbl-detail h3 { font-family: var(--mono); font-size: 18px; margin: 8px 0; }
+  .tbl-detail .desc { color: var(--muted); font-size: 14.5px; margin-bottom: 14px; max-width: 720px; }
+  .tbl-detail .desc b { color: var(--text); }
+  .badge2 { display: inline-block; font: 600 11px var(--mono); letter-spacing: 1px; padding: 3px 10px;
+            border-radius: 999px; margin-right: 6px; text-transform: uppercase; }
+  .badge2.dim { color: var(--gold); border: 1px solid var(--gold); }
+  .badge2.fact { color: var(--bronze); border: 1px solid var(--bronze); }
+  .badge2.plain { color: var(--muted); border: 1px solid var(--border); text-transform: none; }
+  .colstable-wrap { overflow-x: auto; }
+  table.colstable { width: 100%; border-collapse: collapse; font: 13px var(--mono); }
+  .colstable th { text-align: left; color: #5a7590; font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+                  padding: 6px 10px; border-bottom: 1px solid var(--border); }
+  .colstable td { padding: 6px 10px; border-bottom: 1px solid #1a2431; vertical-align: top; white-space: nowrap; }
+  .colstable td.ty { color: var(--blue); }
+  .colstable td.no { color: var(--muted); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                     font-size: 13.5px; white-space: normal; min-width: 220px; }
+  .colstable td.no code { font-family: var(--mono); font-size: 12px; background: #0a0e13; padding: 1px 5px; border-radius: 4px; }
+
   footer { margin-top: 70px; padding-top: 24px; border-top: 1px solid var(--border);
            color: var(--muted); font-size: 13.5px; }
   footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
@@ -194,9 +224,23 @@
   </div>
 </section>
 
+<section id="model">
+  <div class="wrap">
+    <h2><span class="num">02</span>The data model</h2>
+    <p class="sub">Star schema: <b id="c-dims2">7</b> static dimensions and <b id="c-facts2">13</b>
+      daily fact feeds. Columns and types are <b>generated from
+      <code style="font-family:var(--mono)">table_schemas.py</code> at build time</b> —
+      this section cannot drift from the code. Pick a table:</p>
+    <div class="model-grid">
+      <div class="tbl-list" id="tblList"></div>
+      <div class="tbl-detail" id="tblDetail"></div>
+    </div>
+  </div>
+</section>
+
 <section id="day">
   <div class="wrap">
-    <h2><span class="num">02</span>One day in the pipeline</h2>
+    <h2><span class="num">03</span>One day in the pipeline</h2>
     <p class="sub">Press play to follow a single <code style="font-family:var(--mono)">TARGET_DATE</code>
       through the whole system — the map above lights up as data moves.</p>
     <div class="player">
@@ -213,7 +257,7 @@
 
 <section id="api">
   <div class="wrap">
-    <h2><span class="num">03</span>Live-ish API demo: cursor pagination</h2>
+    <h2><span class="num">04</span>Live-ish API demo: cursor pagination</h2>
     <p class="sub">The platform also exposes sales over REST (FastAPI). The generator is
       deterministic, so these are <b>real responses</b> baked into the page — click through
       the pages exactly like an ingestion client would.</p>
@@ -253,7 +297,7 @@
 
 <section id="pathologies">
   <div class="wrap">
-    <h2><span class="num">04</span>Pathologies by design</h2>
+    <h2><span class="num">05</span>Pathologies by design</h2>
     <p class="sub">Clean data teaches nothing. Every quirk below is intentional —
       each one is a downstream exercise in disguise.</p>
     <div class="grid3">
@@ -292,7 +336,7 @@
 
 <section id="governance">
   <div class="wrap">
-    <h2><span class="num">05</span>Governance: how ADLS gets plugged in</h2>
+    <h2><span class="num">06</span>Governance: how ADLS gets plugged in</h2>
     <p class="sub">External storage is never "just a path". Unity Catalog chains four objects
       between a query and the bytes — no keys, no secrets, no Spark conf:</p>
     <div class="chain">
@@ -308,6 +352,13 @@
       <div class="link-box"><div class="lt">Volume / Table</div>
         <div class="ls">files via /Volumes/…, Delta tables on your own path</div></div>
     </div>
+    <p class="sub">This is not a demo corner of the repo: <b>all 20 tables are external</b>
+      (each <code>CREATE TABLE</code> carries a <code>LOCATION</code> under
+      <code>tables/</code>), and dimension snapshots land on the
+      <code>dim_landing</code> external volume — so every byte of the platform lives on
+      storage this chain governs. Worth knowing: <code>DROP TABLE</code> on an external
+      table removes metadata only; re-creating it at the same path resurrects the data
+      from <code>_delta_log</code>.</p>
     <p class="sub">The whole chain is code: an <a
       href="https://github.com/mwasalski/fake_car_workshop/blob/main/infra/setup_adls_azure.md">az-cli
       walkthrough</a>, plain <a
@@ -329,19 +380,19 @@
 const GH = 'https://github.com/mwasalski/fake_car_workshop/blob/main/';
 
 /*__DOCS_DATA_START__*/
-const DOCS = {"table_count": 20, "fact_tables": ["fact_appointments", "fact_customer_feedback", "fact_employee_schedules", "fact_inventory_movements", "fact_invoices", "fact_loyalty_program", "fact_payments", "fact_purchase_order_items", "fact_purchase_orders", "fact_sales_items", "fact_sales_transactions", "fact_work_order_items", "fact_work_orders"], "dim_tables": ["dim_customers", "dim_employees", "dim_locations", "dim_products", "dim_services", "dim_suppliers", "dim_vehicles"], "partitioned": ["fact_appointments", "fact_inventory_movements", "fact_invoices", "fact_payments", "fact_purchase_orders", "fact_sales_transactions", "fact_work_orders"]};
+const DOCS = {"table_count": 20, "fact_tables": ["fact_appointments", "fact_customer_feedback", "fact_employee_schedules", "fact_inventory_movements", "fact_invoices", "fact_loyalty_program", "fact_payments", "fact_purchase_order_items", "fact_purchase_orders", "fact_sales_items", "fact_sales_transactions", "fact_work_order_items", "fact_work_orders"], "dim_tables": ["dim_customers", "dim_employees", "dim_locations", "dim_products", "dim_services", "dim_suppliers", "dim_vehicles"], "partitioned": {"fact_appointments": ["year", "month"], "fact_inventory_movements": ["year", "month"], "fact_invoices": ["year", "month"], "fact_payments": ["year", "month"], "fact_purchase_orders": ["year"], "fact_sales_transactions": ["year", "month"], "fact_work_orders": ["year", "month"]}, "schemas": {"dim_customers": [["customer_id", "BIGINT"], ["customer_code", "STRING"], ["customer_type", "STRING"], ["first_name", "STRING"], ["last_name", "STRING"], ["company_name", "STRING"], ["tax_id", "STRING"], ["email", "STRING"], ["phone", "STRING"], ["city", "STRING"], ["postal_code", "STRING"], ["registration_date", "DATE"], ["preferred_location_id", "BIGINT"], ["marketing_consent", "BOOLEAN"]], "dim_employees": [["employee_id", "BIGINT"], ["employee_code", "STRING"], ["first_name", "STRING"], ["last_name", "STRING"], ["national_id", "STRING"], ["position", "STRING"], ["location_id", "BIGINT"], ["hire_date", "DATE"], ["termination_date", "DATE"], ["hourly_rate", "DOUBLE"], ["is_active", "BOOLEAN"]], "dim_locations": [["location_id", "BIGINT"], ["location_code", "STRING"], ["name", "STRING"], ["type", "STRING"], ["street", "STRING"], ["city", "STRING"], ["region", "STRING"], ["postal_code", "STRING"], ["latitude", "DOUBLE"], ["longitude", "DOUBLE"], ["phone", "STRING"], ["email", "STRING"], ["manager_id", "BIGINT"], ["number_of_bays", "BIGINT"], ["area_m2", "BIGINT"], ["opening_date", "DATE"], ["is_active", "BOOLEAN"]], "dim_products": [["product_id", "BIGINT"], ["product_code", "STRING"], ["name", "STRING"], ["category", "STRING"], ["manufacturer", "STRING"], ["purchase_price_net", "DOUBLE"], ["sale_price_net", "DOUBLE"], ["vat_rate", "BIGINT"], ["unit", "STRING"], ["weight_kg", "DOUBLE"], ["min_stock_level", "BIGINT"], ["is_active", "BOOLEAN"]], "dim_services": [["service_id", "BIGINT"], ["service_code", "STRING"], ["name", "STRING"], ["category", "STRING"], ["min_price_net", "BIGINT"], ["max_price_net", "BIGINT"], ["estimated_time_min", "BIGINT"], ["is_active", "BOOLEAN"]], "dim_suppliers": [["supplier_id", "BIGINT"], ["supplier_code", "STRING"], ["name", "STRING"], ["tax_id", "STRING"], ["city", "STRING"], ["address", "STRING"], ["postal_code", "STRING"], ["phone", "STRING"], ["email", "STRING"], ["contact_person", "STRING"], ["payment_terms_days", "BIGINT"], ["min_order_value", "DOUBLE"], ["is_active", "BOOLEAN"]], "dim_vehicles": [["vehicle_id", "BIGINT"], ["customer_id", "BIGINT"], ["make", "STRING"], ["model", "STRING"], ["year", "BIGINT"], ["vin", "STRING"], ["registration_number", "STRING"], ["fuel_type", "STRING"], ["engine_displacement", "DOUBLE"], ["horsepower", "BIGINT"], ["color", "STRING"], ["mileage_km", "BIGINT"], ["first_registration_date", "DATE"]], "fact_appointments": [["appointment_id", "BIGINT"], ["customer_id", "BIGINT"], ["vehicle_id", "BIGINT"], ["location_id", "BIGINT"], ["service_id", "BIGINT"], ["booking_date", "DATE"], ["appointment_date", "DATE"], ["status", "STRING"], ["booking_channel", "STRING"], ["notes", "STRING"], ["year", "INT"], ["month", "INT"]], "fact_customer_feedback": [["feedback_id", "BIGINT"], ["customer_id", "BIGINT"], ["location_id", "BIGINT"], ["work_order_id", "BIGINT"], ["feedback_date", "DATE"], ["rating", "BIGINT"], ["comment", "STRING"], ["category", "STRING"], ["channel", "STRING"]], "fact_employee_schedules": [["schedule_id", "BIGINT"], ["employee_id", "BIGINT"], ["date", "DATE"], ["start_hour", "BIGINT"], ["end_hour", "BIGINT"], ["shift_type", "STRING"], ["overtime_hours", "BIGINT"], ["attendance", "STRING"]], "fact_inventory_movements": [["movement_id", "BIGINT"], ["product_id", "BIGINT"], ["location_id", "BIGINT"], ["movement_type", "STRING"], ["quantity", "BIGINT"], ["movement_date", "DATE"], ["source_document", "STRING"], ["document_number", "STRING"], ["value_net", "DOUBLE"], ["notes", "STRING"], ["year", "INT"], ["month", "INT"]], "fact_invoices": [["invoice_id", "BIGINT"], ["invoice_code", "STRING"], ["document_type", "STRING"], ["source_type", "STRING"], ["source_id", "BIGINT"], ["customer_id", "BIGINT"], ["location_id", "BIGINT"], ["issue_date", "DATE"], ["sale_date", "DATE"], ["payment_due_date", "DATE"], ["value_net", "DOUBLE"], ["value_vat", "DOUBLE"], ["value_gross", "DOUBLE"], ["status", "STRING"], ["year", "INT"], ["month", "INT"]], "fact_loyalty_program": [["loyalty_id", "BIGINT"], ["customer_id", "BIGINT"], ["event_date", "DATE"], ["event_type", "STRING"], ["points", "BIGINT"], ["description", "STRING"], ["balance_after", "BIGINT"], ["tier", "STRING"]], "fact_payments": [["payment_id", "BIGINT"], ["invoice_id", "BIGINT"], ["payment_date", "DATE"], ["amount", "DOUBLE"], ["payment_method", "STRING"], ["status", "STRING"], ["transaction_number", "STRING"], ["year", "INT"], ["month", "INT"]], "fact_purchase_order_items": [["po_item_id", "BIGINT"], ["po_id", "BIGINT"], ["product_id", "BIGINT"], ["quantity_ordered", "BIGINT"], ["quantity_delivered", "BIGINT"], ["unit_price_net", "DOUBLE"], ["value_net", "DOUBLE"]], "fact_purchase_orders": [["po_id", "BIGINT"], ["po_code", "STRING"], ["supplier_id", "BIGINT"], ["location_id", "BIGINT"], ["order_date", "DATE"], ["planned_delivery_date", "DATE"], ["actual_delivery_date", "DATE"], ["value_net", "DOUBLE"], ["value_gross", "DOUBLE"], ["status", "STRING"], ["year", "INT"]], "fact_sales_items": [["sales_item_id", "BIGINT"], ["transaction_id", "BIGINT"], ["product_id", "BIGINT"], ["quantity", "BIGINT"], ["unit_price_net", "DOUBLE"], ["discount_percent", "BIGINT"], ["value_net", "DOUBLE"], ["vat_rate", "BIGINT"], ["value_gross", "DOUBLE"]], "fact_sales_transactions": [["transaction_id", "BIGINT"], ["transaction_code", "STRING"], ["location_id", "BIGINT"], ["customer_id", "BIGINT"], ["employee_id", "BIGINT"], ["transaction_date", "DATE"], ["payment_method", "STRING"], ["receipt_number", "STRING"], ["year", "INT"], ["month", "INT"]], "fact_work_order_items": [["wo_item_id", "BIGINT"], ["work_order_id", "BIGINT"], ["item_type", "STRING"], ["service_id", "BIGINT"], ["product_id", "BIGINT"], ["quantity", "BIGINT"], ["unit_price_net", "DOUBLE"], ["value_net", "DOUBLE"], ["vat_rate", "BIGINT"], ["value_gross", "DOUBLE"], ["discount_percent", "BIGINT"]], "fact_work_orders": [["work_order_id", "BIGINT"], ["work_order_code", "STRING"], ["location_id", "BIGINT"], ["customer_id", "BIGINT"], ["vehicle_id", "BIGINT"], ["mechanic_id", "BIGINT"], ["reception_date", "DATE"], ["completion_date", "DATE"], ["status", "STRING"], ["mileage_at_reception", "BIGINT"], ["customer_notes", "STRING"], ["year", "INT"], ["month", "INT"]]}};
 /*__DOCS_DATA_END__*/
 document.getElementById('c-tables').textContent = DOCS.table_count;
 document.getElementById('c-facts').textContent = DOCS.fact_tables.length;
 
 const NODES = [
   { id:'ddl',       x:20,  y:60,  w:180, title:'create_tables.sql', sub:'DDL · once',        badge:'one-time',
-    desc:'Creates the <b>car_workshop</b> catalog, schemas (dim/fact/silver/lab), volumes and all 20 empty Delta tables. Idempotent — <code>IF NOT EXISTS</code> everywhere.',
-    code:'CREATE CATALOG IF NOT EXISTS car_workshop;\nCREATE SCHEMA  IF NOT EXISTS car_workshop.fact;\nCREATE VOLUME  IF NOT EXISTS car_workshop.fact.fact_files;',
+    desc:'Creates the <b>car_workshop</b> catalog, schemas (dim/fact/silver/lab), volumes and all 20 empty Delta tables — every table is <b>external</b>, with its own <code>LOCATION</code> on ADLS (prereq: the UC chain from section 06). Idempotent — <code>IF NOT EXISTS</code> everywhere.',
+    code:"CREATE TABLE IF NOT EXISTS car_workshop.fact.fact_sales_transactions (…)\nUSING DELTA PARTITIONED BY (year, month)\nLOCATION 'abfss://landing@….dfs.core.windows.net/tables/fact/fact_sales_transactions';",
     file:'create_tables.sql' },
   { id:'dims',      x:230, y:60,  w:190, title:'initial_dims.ipynb', sub:'7 dims · once',    badge:'one-time',
-    desc:'Loads 7 dimension tables (customers, employees, locations, vehicles…) with <b>seed 42</b> — a direct Delta overwrite, safe to re-run. Dims do <b>not</b> flow through Auto Loader.',
-    code:"rng = np.random.default_rng(42)\ndf.write.mode('overwrite') \\\n  .saveAsTable('car_workshop.dim.dim_customers')",
+    desc:'Generates 7 dimension tables (customers, employees, locations, vehicles…) with <b>seed 42</b> and writes each as a <b>parquet snapshot</b> to the external volume <code>dim_landing</code> on ADLS — files only, safe to re-run. Loading them into <code>car_workshop.dim.*</code> is a separate ingestion step (in progress: sheets-as-source redesign).',
+    code:"df = spark.createDataFrame(pdf, schema=ddl)\ndf.write.mode('overwrite') \\\n  .parquet('/Volumes/car_workshop/dim/dim_landing/dim_customers')",
     file:'initial_dims.ipynb' },
   { id:'daily',     x:20,  y:170, w:180, title:'daily.ipynb', sub:`${DOCS.fact_tables.length} fact generators`,      badge:'daily',
     desc:'Generates ~100K rows across 13 fact tables. <b>Seed = TARGET_DATE</b>, and every day owns a disjoint 10M ID block — re-running a date reproduces identical rows, and IDs never collide across days.',
@@ -384,8 +435,8 @@ const NODES = [
     code:'# ingest/pull_sales.py — being built\n# audit checklist: timeouts, retry on 5xx only,\n# backoff+jitter, 429, idempotent re-run',
     file:'api/README.md' },
   { id:'adls',      x:540, y:470, w:180, title:'ADLS Gen2 landing', sub:'UC external volume', badge:'api track',
-    desc:'External volume governed by Unity Catalog (see section 05). Files dropped here flow into the <b>same</b> Auto Loader → bronze → silver path as the daily generator.',
-    code:"abfss://landing@….dfs.core.windows.net/\n  volumes/fact_landing/",
+    desc:'External storage governed by Unity Catalog (see section 06): volumes for file landing (facts + dim snapshots) and one <code>tables/</code> path per external Delta table. Files dropped here flow into the <b>same</b> Auto Loader → bronze → silver path as the daily generator.',
+    code:"abfss://landing@….dfs.core.windows.net/\n  volumes/fact_landing/   volumes/dim_landing/\n  tables/dim/…            tables/fact/…",
     file:'infra/create_external_adls.sql' },
 ];
 
@@ -549,6 +600,113 @@ document.getElementById('peekBtn').addEventListener('click', () => {
     `cross-date or malformed cursors with 400 — clients that parse cursors break the day the format changes.</span>`;
 });
 renderPage();
+
+/* ================= data model explorer ================= */
+const TABLE_DOCS = {
+  dim_customers: { d:'Registered customers — individuals and companies across Polish cities. Walk-in customers never appear here: they exist only as NULL <code>customer_id</code> in the facts.',
+    c:{ customer_type:'individual | company (companies carry tax_id + company_name)', marketing_consent:'GDPR-style opt-in flag' } },
+  dim_employees: { d:'Staff across all locations — mechanics, sales assistants, managers. <code>hourly_rate</code> feeds labour costing; <code>is_active</code> + <code>termination_date</code> are ready-made SCD exercise material.',
+    c:{ position:'weighted per location type (reference_data.POSITIONS)' } },
+  dim_locations: { d:'The network: 100 sites — workshop / shop / workshop_and_shop (weighted 30/20/50), with geo coordinates, bay counts and floor area.',
+    c:{ number_of_bays:'workshop capacity driver' } },
+  dim_products: { d:'Parts & accessories catalogue. Prices generated per category from PRODUCT_PRICE_RULES; purchase vs sale price implies the margin.',
+    c:{ min_stock_level:'reorder threshold — context for inventory movements' } },
+  dim_services: { d:'Workshop service catalogue with price ranges and estimated duration — the price actually charged in a work order is drawn between min and max.' },
+  dim_suppliers: { d:'Parts suppliers with payment terms and minimum order values — the counterparty of purchase orders.' },
+  dim_vehicles: { d:'Customer cars. Makes and models weighted to look Polish-market real (reference_data.CAR_MAKES / MAKE_WEIGHTS); VIN and plates generated.',
+    c:{ customer_id:'FK → dim_customers (owner)' } },
+  fact_appointments: { d:'Bookings for workshop visits. <code>booking_date</code> precedes <code>appointment_date</code>; statuses weighted (75% completed, 5% no-show).',
+    c:{ booking_channel:'phone / online / in_person / email, weighted' } },
+  fact_customer_feedback: { d:'Post-service ratings tied to work orders.',
+    c:{ rating:'1–5', channel:'survey channel' } },
+  fact_employee_schedules: { d:'Shift records. Deliberately written <b>last</b> by daily.ipynb — its files are the per-date completion marker that backfill.ipynb checks.',
+    c:{ attendance:'present / absent / sick-leave style statuses' } },
+  fact_inventory_movements: { d:'Stock changes per product and location: receipts, sales issues, workshop issues, returns, corrections, stocktakes.',
+    c:{ movement_type:'six types, weighted (reference_data.MOVEMENT_TYPES)' } },
+  fact_invoices: { d:'Invoice headers. <b>Polymorphic source</b>: <code>source_type</code> + <code>source_id</code> point at either a sales transaction or a work order.',
+    c:{ source_type:'what source_id points at (sale vs work order)', source_id:'polymorphic FK — resolved via source_type',
+        document_type:'vat_invoice / receipt / credit_note', status:'paid 80% / pending / overdue / cancelled' } },
+  fact_loyalty_program: { d:'Loyalty point events with a running balance and customer tier.',
+    c:{ balance_after:'running balance after this event', tier:'tier at event time' } },
+  fact_payments: { d:'Payments against invoices; method and status weighted (90% completed).' },
+  fact_purchase_orders: { d:'Replenishment orders to suppliers — the only fact partitioned by year alone.',
+    c:{ actual_delivery_date:'can trail planned_delivery_date (late deliveries)' } },
+  fact_purchase_order_items: { d:'PO line items; <code>quantity_delivered</code> can undershoot <code>quantity_ordered</code> (partial deliveries).' },
+  fact_sales_items: { d:'Line items of shop sales; <code>value_net</code> = quantity × unit_price_net × (1 − discount).' },
+  fact_sales_transactions: { d:'Shop-sale headers — the reference table of the platform: the silver pattern, the REST API and the skew exercises are all built on it.',
+    c:{ customer_id:'NULL ≈ 30% = walk-in customer (deliberate skew material)', transaction_code:'<code>TRX-YYYYMMDD-NNNNNN</code>' } },
+  fact_work_orders: { d:'Workshop jobs from reception to completion; statuses heavily skewed (92% completed).',
+    c:{ mechanic_id:'FK → dim_employees', mileage_at_reception:'odometer reading at drop-off' } },
+  fact_work_order_items: { d:'Work-order lines: labour or parts. <b>The sentinel exercise:</b> exactly one of <code>service_id</code> / <code>product_id</code> is real, the other is <code>0</code> — silver converts it to NULL.',
+    c:{ item_type:"'service' | 'product' — decides which FK is real",
+        service_id:'0 when item_type = product (sentinel)', product_id:'0 when item_type = service (sentinel)' } },
+};
+
+const FK_MAP = { customer_id:'dim_customers', employee_id:'dim_employees', mechanic_id:'dim_employees',
+  manager_id:'dim_employees', location_id:'dim_locations', preferred_location_id:'dim_locations',
+  product_id:'dim_products', service_id:'dim_services', supplier_id:'dim_suppliers', vehicle_id:'dim_vehicles',
+  invoice_id:'fact_invoices', po_id:'fact_purchase_orders', work_order_id:'fact_work_orders',
+  transaction_id:'fact_sales_transactions' };
+
+const SCHEMAS = DOCS.schemas || {};
+const tblList = document.getElementById('tblList');
+const tblDetail = document.getElementById('tblDetail');
+const tblBtns = {};
+
+function colNote(table, col, idx) {
+  const manual = (TABLE_DOCS[table] || {}).c || {};
+  if (manual[col]) return manual[col];
+  if (idx === 0) return table.startsWith('fact_')
+    ? "primary key — minted from the day's disjoint 10M ID block"
+    : 'primary key (static, seed 42)';
+  if (((DOCS.partitioned || {})[table] || []).includes(col))
+    return 'hive partition column (derived from the date; dropped in silver)';
+  if (FK_MAP[col]) return 'FK → ' + FK_MAP[col];
+  return '';
+}
+
+function renderTable(t) {
+  Object.values(tblBtns).forEach(b => b.classList.remove('on'));
+  if (tblBtns[t]) tblBtns[t].classList.add('on');
+  const cols = SCHEMAS[t] || [];
+  const layer = t.startsWith('dim_') ? 'dim' : 'fact';
+  const part = (DOCS.partitioned || {})[t];
+  const doc = TABLE_DOCS[t] || { d:'<i>No description yet — table added in table_schemas.py, prose pending.</i>' };
+  const rows = cols.map(([c, ty], i) =>
+    `<tr><td>${c}</td><td class="ty">${ty}</td><td class="no">${colNote(t, c, i)}</td></tr>`).join('');
+  tblDetail.innerHTML =
+    `<span class="badge2 ${layer}">${layer === 'dim' ? 'dimension · loaded once' : 'fact · daily feed'}</span>` +
+    `<span class="badge2 plain">${cols.length} columns</span>` +
+    (part ? `<span class="badge2 plain">partitioned: ${part.join(', ')}</span>` : '') +
+    `<h3>car_workshop.${layer}.${t}</h3>` +
+    `<p class="desc">${doc.d}</p>` +
+    `<div class="colstable-wrap"><table class="colstable">` +
+    `<thead><tr><th>column</th><th>type</th><th>notes</th></tr></thead>` +
+    `<tbody>${rows}</tbody></table></div>`;
+}
+
+function renderList() {
+  tblList.innerHTML = '';
+  [['Dimensions', DOCS.dim_tables || []], ['Facts', DOCS.fact_tables || []]].forEach(([label, tables]) => {
+    const h = document.createElement('div'); h.className = 'tbl-group'; h.textContent = label;
+    tblList.appendChild(h);
+    tables.forEach(t => {
+      const b = document.createElement('button');
+      b.className = 'tbl-btn'; b.type = 'button';
+      b.innerHTML = `<span>${t}</span><span class="cc">${(SCHEMAS[t] || []).length}</span>`;
+      b.addEventListener('click', () => renderTable(t));
+      tblList.appendChild(b);
+      tblBtns[t] = b;
+    });
+  });
+}
+
+if (Object.keys(SCHEMAS).length) {
+  document.getElementById('c-dims2').textContent = (DOCS.dim_tables || []).length;
+  document.getElementById('c-facts2').textContent = (DOCS.fact_tables || []).length;
+  renderList();
+  renderTable('fact_sales_transactions');
+}
 </script>
 </body>
 </html>

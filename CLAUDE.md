@@ -16,7 +16,8 @@ Polish. Everything executes on Databricks against Unity Catalog catalog `car_wor
 
 ```text
 create_tables.sql   (once)   catalog, schemas, volumes, 20 empty Delta tables
-initial_dims.ipynb  (once)   7 dims -> car_workshop.dim.*  (direct Delta write, seed 42)
+initial_dims.ipynb  (once)   7 dims -> parquet on /Volumes/car_workshop/dim/dim_landing (seed 42;
+                             file -> dim.* ingestion is a separate, not-yet-built step)
 daily.ipynb         (daily)  13 fact tables -> parquet on /Volumes/car_workshop/fact/fact_files
 autoloader.ipynb    (daily)  Auto Loader (cloudFiles) -> car_workshop.fact.*  (dims do NOT flow through it)
 silver/             (daily)  bronze -> car_workshop.silver.* (streaming foreachBatch + MERGE)

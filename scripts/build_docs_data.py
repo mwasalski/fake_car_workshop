@@ -27,15 +27,23 @@ def derive_docs_data() -> dict:
     def tbl(name: str, prefix: str) -> str:
         return name.removeprefix(prefix).removesuffix('_SCHEMA').lower()
 
-    schemas = [n for n in dir(ts) if n.endswith('_SCHEMA')]
-    facts = sorted(tbl(n, 'FACT_') for n in schemas if n.startswith('FACT_'))
-    dims = sorted(tbl(n, 'DIM_') for n in schemas if n.startswith('DIM_'))
+    schema_names = [n for n in dir(ts) if n.endswith('_SCHEMA')]
+    facts = sorted(tbl(n, 'FACT_') for n in schema_names if n.startswith('FACT_'))
+    dims = sorted(tbl(n, 'DIM_') for n in schema_names if n.startswith('DIM_'))
     assert facts and dims, 'table_schemas.py yielded no tables - refusing to build'
+
+    schemas = {}
+    for n in schema_names:
+        prefix = 'FACT_' if n.startswith('FACT_') else 'DIM_'
+        name = prefix.lower() + tbl(n, prefix)
+        schemas[name] = [[col, typ] for col, typ in getattr(ts, n).items()]
+
     return {
-        'table_count': len(schemas),
+        'table_count': len(schema_names),
         'fact_tables': [f'fact_{t}' for t in facts],
         'dim_tables': [f'dim_{t}' for t in dims],
-        'partitioned': sorted(ts.PARTITIONED_TABLES),
+        'partitioned': dict(sorted(ts.PARTITIONED_TABLES.items())),
+        'schemas': dict(sorted(schemas.items())),
     }
 
 

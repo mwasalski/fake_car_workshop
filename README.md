@@ -36,6 +36,7 @@ run_all.ipynb                orchestrator: setup + daily cycle via %run
 | `terraform/` | the same ADLS/UC chain as code (see `terraform/README.md`) |
 | `scripts/` | CI helpers: notebook syntax check, API smoke test, docs data builder |
 | `docs/` | interactive manual published via GitHub Pages (built data: `scripts/build_docs_data.py`) |
+| `journal/` | learning journal – one file per day (`YYYY-MM-DD.md`) |
 | `car_workshop_ab/` | Databricks Asset Bundle scaffold (`databricks bundle init`) – DABs learning ground, still contains template sample code |
 | `.claude/skills/` | Claude Code sparring-partner skills: `/de-sparring` (senior DE) and `/da-mentor` (Data Architect path) |
 
@@ -88,4 +89,13 @@ Tables keep their schema – no need to drop anything:
    dbutils.fs.rm('/Volumes/car_workshop/fact/autoloader_checkpoints/', recurse=True)
    ```
 
-3. Dimensions: just re-run `initial_dims.ipynb` (overwrite).
+3. Dimensions: re-run `initial_dims.ipynb` — it overwrites the parquet snapshots
+   on `/Volumes/car_workshop/dim/dim_landing/`. NOTE: since the files-only switch
+   it does NOT load `car_workshop.dim.*` tables; the file -> table ingestion step
+   is pending (see `journal/todo/04-sheets-redesign.md`).
+
+All 20 tables are external (`create_tables.sql` sets a `LOCATION` per table), so
+TRUNCATE removes rows but a **full nuke** additionally requires wiping the table
+paths on ADLS (`abfss://landing@carworkshopadls.dfs.core.windows.net/tables/`)
+after dropping — DROP alone leaves the files, and re-CREATE at the same LOCATION
+resurrects the old table from its `_delta_log`.

@@ -3,6 +3,20 @@
 -- Catalog : car_workshop
 -- Schemas : dim  (dimensions)
 --           fact (facts)
+--
+-- All 20 tables are EXTERNAL: each CREATE TABLE carries a LOCATION
+-- under abfss://landing@carworkshopadls.dfs.core.windows.net/tables/.
+-- PREREQUISITE: storage credential + external location must exist
+-- first (infra/create_external_adls.sql, sections 0-2).
+--
+-- External-table semantics to remember:
+--   * DROP TABLE removes only metadata - files stay on ADLS; a later
+--     CREATE at the same LOCATION resurrects the table from _delta_log
+--     (and then the column list here is ignored).
+--   * Full reset therefore needs the paths wiped too:
+--     dbutils.fs.rm('/tables/...', recurse=True) via the external
+--     location, or 'az storage fs directory delete'.
+--   * Paths must not overlap any volume or other table location.
 -- =============================================================
 
 CREATE CATALOG IF NOT EXISTS car_workshop;
@@ -41,7 +55,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.dim.dim_customers (
   preferred_location_id    BIGINT,
   marketing_consent        BOOLEAN
 )
-USING DELTA;
+USING DELTA
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/dim/dim_customers';
 
 -- -------------------------------------------------------------
 
@@ -58,7 +73,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.dim.dim_employees (
   hourly_rate              DOUBLE,
   is_active                BOOLEAN
 )
-USING DELTA;
+USING DELTA
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/dim/dim_employees';
 
 
 -- -------------------------------------------------------------
@@ -82,7 +98,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.dim.dim_locations (
   opening_date             DATE,
   is_active                BOOLEAN
 )
-USING DELTA;
+USING DELTA
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/dim/dim_locations';
 
 -- -------------------------------------------------------------
 
@@ -100,7 +117,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.dim.dim_products (
   min_stock_level          BIGINT,
   is_active                BOOLEAN
 )
-USING DELTA;
+USING DELTA
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/dim/dim_products';
 
 
 -- -------------------------------------------------------------
@@ -115,7 +133,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.dim.dim_services (
   estimated_time_min       BIGINT,
   is_active                BOOLEAN
 )
-USING DELTA;
+USING DELTA
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/dim/dim_services';
 
 
 -- -------------------------------------------------------------
@@ -135,7 +154,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.dim.dim_suppliers (
   min_order_value          DOUBLE,
   is_active                BOOLEAN
 )
-USING DELTA;
+USING DELTA
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/dim/dim_suppliers';
 
 -- -------------------------------------------------------------
 
@@ -154,7 +174,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.dim.dim_vehicles (
   mileage_km                  BIGINT,
   first_registration_date     date
 )
-USING DELTA;
+USING DELTA
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/dim/dim_vehicles';
 
 
 -- =============================================================
@@ -179,7 +200,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.fact.fact_appointments (
   month              INT
 )
 USING DELTA
-PARTITIONED BY (year, month);
+PARTITIONED BY (year, month)
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/fact/fact_appointments';
 
 
 -- -------------------------------------------------------------
@@ -195,7 +217,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.fact.fact_customer_feedback (
   category         STRING,
   channel          STRING
 )
-USING DELTA;
+USING DELTA
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/fact/fact_customer_feedback';
 
 
 -- -------------------------------------------------------------
@@ -210,7 +233,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.fact.fact_employee_schedules (
   overtime_hours   BIGINT,
   attendance       STRING
 )
-USING DELTA;
+USING DELTA
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/fact/fact_employee_schedules';
 
 -- -------------------------------------------------------------
 
@@ -229,7 +253,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.fact.fact_inventory_movements (
   month              INT
 )
 USING DELTA
-PARTITIONED BY (year, month);
+PARTITIONED BY (year, month)
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/fact/fact_inventory_movements';
 
 -- -------------------------------------------------------------
 
@@ -252,7 +277,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.fact.fact_invoices (
   month               INT
 )
 USING DELTA
-PARTITIONED BY (year, month);
+PARTITIONED BY (year, month)
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/fact/fact_invoices';
 
 -- -------------------------------------------------------------
 
@@ -266,7 +292,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.fact.fact_loyalty_program (
   balance_after    BIGINT,
   tier             STRING
 )
-USING DELTA;
+USING DELTA
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/fact/fact_loyalty_program';
 
 
 -- -------------------------------------------------------------
@@ -283,7 +310,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.fact.fact_payments (
   month               INT
 )
 USING DELTA
-PARTITIONED BY (year, month);
+PARTITIONED BY (year, month)
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/fact/fact_payments';
 
 -- -------------------------------------------------------------
 
@@ -296,7 +324,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.fact.fact_purchase_order_items (
   unit_price_net             DOUBLE,
   value_net                  DOUBLE
 )
-USING DELTA;
+USING DELTA
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/fact/fact_purchase_order_items';
 
 -- -------------------------------------------------------------
 
@@ -314,7 +343,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.fact.fact_purchase_orders (
   year                         INT
 )
 USING DELTA
-PARTITIONED BY (year);
+PARTITIONED BY (year)
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/fact/fact_purchase_orders';
 
 -- -------------------------------------------------------------
 
@@ -329,7 +359,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.fact.fact_sales_items (
   vat_rate                   BIGINT,
   value_gross                DOUBLE
 )
-USING DELTA;
+USING DELTA
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/fact/fact_sales_items';
 
 -- -------------------------------------------------------------
 
@@ -346,7 +377,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.fact.fact_sales_transactions (
   month                INT
 )
 USING DELTA
-PARTITIONED BY (year, month);
+PARTITIONED BY (year, month)
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/fact/fact_sales_transactions';
 
 -- -------------------------------------------------------------
 
@@ -363,7 +395,8 @@ CREATE TABLE IF NOT EXISTS car_workshop.fact.fact_work_order_items (
   value_gross                DOUBLE,
   discount_percent           BIGINT
 )
-USING DELTA;
+USING DELTA
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/fact/fact_work_order_items';
 
 -- -------------------------------------------------------------
 
@@ -383,5 +416,6 @@ CREATE TABLE IF NOT EXISTS car_workshop.fact.fact_work_orders (
   month                      INT
 )
 USING DELTA
-PARTITIONED BY (year, month);
+PARTITIONED BY (year, month)
+LOCATION 'abfss://landing@carworkshopadls.dfs.core.windows.net/tables/fact/fact_work_orders';
 
