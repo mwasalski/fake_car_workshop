@@ -22,10 +22,15 @@ jobs:
           cache: pip # caches ~/.cache/pip between runs, keyed on requirements
 
       - name: Compile-check shared modules
-        run: python -m py_compile reference_data.py table_schemas.py
+        run: python -m py_compile reference_data.py table_schemas.py simulator/*.py
 
       - name: Syntax-check notebook code cells
         run: python scripts/check_notebooks.py
+
+      - name: Simulator smoke test # generates dims + one day, checks schemas & determinism
+        run: |
+          pip install -r simulator/requirements.txt
+          python -m simulator.smoke_test
 
       - name: API smoke test
         run: |

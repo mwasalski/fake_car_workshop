@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>car-workshop simulator</title>
+<style>
+  :root {
+    --bg:#0d1420; --card:#141d2e; --line:#22304a; --txt:#d7e1ef; --dim:#7f93ad;
+    --accent:#e8a33d; --btn-txt:#14100a; --input-bg:#0b111c; --th-bg:#1a2438;
+    --row-alt:#111a2a; --ok:#5fbf77; --err:#e06666; --null:#556677;
+    --mono:ui-monospace,Menlo,monospace;
+  }
+  * { box-sizing:border-box; margin:0; }
+  body { background:var(--bg); color:var(--txt); font:15px/1.5 system-ui,sans-serif;
+    padding:24px; transition:background .25s, color .25s; }
+  header { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:4px; }
+  h1 { font-size:20px; } h1 span { color:var(--accent); }
+  .spacer { flex:1; }
+  .sub { color:var(--dim); margin-bottom:20px; font-size:13px; }
+  .grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); margin-bottom:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px;
+    transition:background .25s; }
+  .card h2 { font-size:14px; margin-bottom:10px; color:var(--accent); }
+  label { font-size:12px; color:var(--dim); display:block; margin:8px 0 2px; }
+  input, select { background:var(--input-bg); color:var(--txt); border:1px solid var(--line);
+    border-radius:6px; padding:6px 8px; font:13px var(--mono); width:100%; }
+  button { background:var(--accent); color:var(--btn-txt); border:0; border-radius:6px;
+    font-weight:700; padding:8px 14px; margin-top:10px; cursor:pointer; }
+  button:disabled { opacity:.4; cursor:wait; }
+  button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent);
+    margin:0; font-weight:600; }
+  #themeSel { width:auto; }
+  #log { font:12px var(--mono); white-space:pre-wrap; color:var(--dim); max-height:140px;
+    overflow:auto; margin-top:8px; }
+  #log .ok { color:var(--ok); } #log .err { color:var(--err); }
+  .tblwrap { overflow:auto; max-height:60vh; border:1px solid var(--line); border-radius:8px; }
+  table { border-collapse:collapse; font:12px var(--mono); width:max-content; min-width:100%; }
+  th { position:sticky; top:0; background:var(--th-bg); color:var(--accent); text-align:left; }
+  th, td { padding:4px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  tr:nth-child(even) td { background:var(--row-alt); }
+  .meta { font-size:12px; color:var(--dim); margin:8px 0; }
+  .null { color:var(--null); font-style:italic; }
+  /* ── modal ── */
+  #overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none;
+    align-items:center; justify-content:center; padding:24px; z-index:10; }
+  #overlay.open { display:flex; }
+  #modal { background:var(--card); border:1px solid var(--line); border-radius:12px;
+    max-width:820px; width:100%; max-height:85vh; display:flex; flex-direction:column; }
+  #modalHead { display:flex; align-items:center; gap:8px; padding:14px 18px;
+    border-bottom:1px solid var(--line); }
+  #modalHead b { color:var(--accent); }
+  .langtab { background:transparent; border:1px solid var(--line); color:var(--dim);
+    border-radius:6px; padding:4px 12px; margin:0; font-weight:600; }
+  .langtab.active { border-color:var(--accent); color:var(--accent); }
+  #modalBody { overflow:auto; padding:18px 22px; font-size:14px; }
+  #modalBody h3 { color:var(--accent); font-size:15px; margin:16px 0 6px; }
+  #modalBody h3:first-child { margin-top:0; }
+  #modalBody p, #modalBody li { color:var(--txt); margin-bottom:6px; }
+  #modalBody ul, #modalBody ol { padding-left:22px; margin-bottom:8px; }
+  #modalBody code { font:12px var(--mono); background:var(--input-bg); border-radius:4px;
+    padding:1px 5px; color:var(--accent); }
+  #modalBody .block { font:12px var(--mono); background:var(--input-bg); border-radius:8px;
+    padding:10px 12px; margin:6px 0 10px; white-space:pre; overflow-x:auto; color:var(--txt); }
+  #closeX { margin-left:auto; background:transparent; color:var(--dim); border:0;
+    font-size:20px; padding:0 4px; margin-top:0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>car-workshop <span>simulator</span></h1>
+  <div class="spacer"></div>
+  <select id="themeSel" onchange="applyTheme(this.value)" title="color theme"></select>
+  <button class="ghost" onclick="openFolder()">📂 data folder</button>
+  <button class="ghost" onclick="openReadme()">README</button>
+</header>
+<p class="sub">Local ERP simulator — generates the same synthetic dataset as the Databricks
+  notebooks (shared code: <code>simulator/*.py</code>), no Spark required.</p>
+
+<div class="grid">
+  <div class="card">
+    <h2>1 · Dimensions (one-time, seed 42)</h2>
+    <label>scale (1.0 = full 50K customers — slower)</label>
+    <input id="dimScale" value="0.05">
+    <button id="btnDims" onclick="genDims()">Generate dims</button>
+  </div>
+  <div class="card">
+    <h2>2 · One day of facts (seed = date)</h2>
+    <label>date (blank = yesterday)</label>
+    <input id="dayDate" placeholder="YYYY-MM-DD">
+    <label>scale (1.0 ≈ 100K rows)</label>
+    <input id="dayScale" value="0.05">
+    <button id="btnDay" onclick="genDay()">Generate day</button>
+  </div>
+  <div class="card">
+    <h2>3 · Backfill (range of days)</h2>
+    <div style="display:flex; gap:8px">
+      <div style="flex:1"><label>start</label><input id="bfStart" placeholder="YYYY-MM-DD"></div>
+      <div style="flex:1"><label>end</label><input id="bfEnd" placeholder="YYYY-MM-DD"></div>
+    </div>
+    <label>scale</label>
+    <input id="bfScale" value="0.02">
+    <button id="btnBf" onclick="genBackfill()">Generate range</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Preview</h2>
+  <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap">
+    <div style="flex:1; min-width:220px"><label>table</label><select id="tblSel"></select></div>
+    <div><label>rows</label><input id="prevN" value="1000" style="width:90px"></div>
+    <button style="margin:0" onclick="preview()">Preview</button>
+  </div>
+  <div class="meta" id="prevMeta"></div>
+  <div class="tblwrap" id="prevBox"></div>
+  <div id="log"></div>
+</div>
+
+<!-- ── README modal ─────────────────────────────────────────── -->
+<div id="overlay" onclick="if (event.target === this) closeReadme()">
+  <div id="modal">
+    <div id="modalHead">
+      <b>README</b>
+      <button class="langtab active" id="tabPL" onclick="setLang('pl')">PL</button>
+      <button class="langtab" id="tabEN" onclick="setLang('en')">EN</button>
+      <button id="closeX" onclick="closeReadme()">✕</button>
+    </div>
+    <div id="modalBody">
+
+<div id="readme-pl">
+<h3>Co to jest</h3>
+<p>Lokalny <b>symulator ERP</b> platformy fake_car_workshop: generuje dokładnie ten sam
+syntetyczny zbiór danych, co notebooki na Databricks, ale bez Sparka i bez chmury.
+Logika generacji jest <b>współdzielona</b> — moduły <code>simulator/dims_generation.py</code>
+i <code>simulator/fact_generation.py</code> importują zarówno notebooki
+(<code>initial_dims.ipynb</code>, <code>daily.ipynb</code>), jak i ta aplikacja.
+Jedna implementacja, dwa środowiska.</p>
+
+<h3>Szybki start</h3>
+<ol>
+<li><b>1 · Dimensions</b> — jednorazowo. Buduje 7 tabel wymiarów (seed 42): lokalizacje,
+pracownicy, klienci, pojazdy, produkty, usługi, dostawcy.</li>
+<li><b>2 · One day of facts</b> — jeden dzień danych z 13 tabel faktów (sprzedaż, zlecenia
+warsztatowe, faktury, płatności, magazyn…). Puste pole daty = wczoraj.</li>
+<li><b>3 · Backfill</b> — pętla po zakresie dat (max rok na żądanie); lokalny odpowiednik
+<code>backfill.ipynb</code>.</li>
+<li><b>Preview</b> — podgląd pierwszych N wierszy (do 10 000) dowolnej wygenerowanej tabeli.</li>
+</ol>
+
+<h3>Parametr scale</h3>
+<ul>
+<li><b>Fakty:</b> <code>scale=1.0</code> ≈ 100 000 wierszy/dzień; <code>0.05</code> = 5%
+tej objętości. Dla tej samej trójki (data, scale, dimy) wynik jest <b>identyczny</b>
+przy każdym uruchomieniu (seed = data).</li>
+<li><b>Wymiary:</b> <code>scale &lt; 1.0</code> to wygoda do lokalnych testów — zmniejsza
+klientów/pojazdy/dostawców, ale zmienia konsumpcję RNG, więc wiersze różnią się od pełnego
+zbioru z Databricks. Pełna zgodność: <code>scale=1.0</code>.</li>
+</ul>
+
+<h3>Determinizm i bloki ID</h3>
+<p>RNG jest zasiewany datą (<code>seed = YYYYMMDD</code>), a każdy dzień dostaje rozłączny
+blok 10 mln ID na tabelę (<code>ID_START = dni_od_2020-01-01 × 10M</code>) — ID nigdy nie
+kolidują między dniami. Ponowne wygenerowanie tej samej daty tworzy <b>identyczne wiersze,
+ale nowe pliki</b> (duplikaty są celowym materiałem do ćwiczeń z deduplikacji w silver).
+Klauzula: <code>fact_payments.transaction_number</code> używa uuid4 i jako jedyna kolumna
+łamie determinizm (znany dług, śledzony w journalu).</p>
+
+<h3>Semantyka danych (skróty)</h3>
+<ul>
+<li><code>customer_id = NULL</code> w sprzedaży = klient bez rejestracji (~30%, celowy skew).</li>
+<li><code>work_order_items</code>: sentinel <code>0</code> w nieużywanym FK usługa/produkt.</li>
+<li>Daty w parquetach to prawdziwe <code>date32</code> (nie timestampy) — kontrakt z tabelami Delta.</li>
+</ul>
+
+<h3>Układ danych na dysku</h3>
+<div class="block">data/
+  dim_landing/&lt;tabela_dim&gt;/snapshot.parquet
+  fact_files/&lt;tabela_fact&gt;/[year=…/month=…/]*.parquet</div>
+<p>W kontenerze to volume <code>/data</code>; lokalnie katalog <code>./data</code>
+(w <code>.gitignore</code>). Układ odzwierciedla volumeny na Databricks.</p>
+
+<h3>API</h3>
+<div class="block">GET  /api/status                          wygenerowane tabele + liczby wierszy
+POST /api/generate/dims?scale=             7 wymiarów (seed 42)
+POST /api/generate/day?day=&amp;scale=         1 dzień, 13 tabel faktów
+POST /api/generate/backfill?start=&amp;end=&amp;scale=   zakres dat
+GET  /api/preview/{tabela}?n=              pierwsze n wierszy jako JSON</div>
+
+<h3>Uruchamianie</h3>
+<div class="block"># Docker (build z ROOTA repo)
+docker build -f simulator/Dockerfile -t car-workshop-sim .
+docker run -p 8000:1289 -v "$PWD/data:/data" -e HOST_DATA_DIR="$PWD/data" car-workshop-sim
+
+# bez Dockera
+pip install -r simulator/requirements.txt
+uvicorn simulator.app:app --reload</div>
+</div>
+
+<div id="readme-en" style="display:none">
+<h3>What this is</h3>
+<p>The local <b>ERP simulator</b> of the fake_car_workshop platform: it generates exactly
+the same synthetic dataset as the Databricks notebooks, but with no Spark and no cloud.
+The generation logic is <b>shared</b> — modules <code>simulator/dims_generation.py</code>
+and <code>simulator/fact_generation.py</code> are imported both by the notebooks
+(<code>initial_dims.ipynb</code>, <code>daily.ipynb</code>) and by this app.
+One implementation, two environments.</p>
+
+<h3>Quick start</h3>
+<ol>
+<li><b>1 · Dimensions</b> — one-time. Builds the 7 dimension tables (seed 42): locations,
+employees, customers, vehicles, products, services, suppliers.</li>
+<li><b>2 · One day of facts</b> — a single day across 13 fact tables (sales, work orders,
+invoices, payments, inventory…). Blank date = yesterday.</li>
+<li><b>3 · Backfill</b> — loops over a date range (max one year per request); the local
+equivalent of <code>backfill.ipynb</code>.</li>
+<li><b>Preview</b> — first N rows (up to 10,000) of any generated table.</li>
+</ol>
+
+<h3>The scale parameter</h3>
+<ul>
+<li><b>Facts:</b> <code>scale=1.0</code> ≈ 100,000 rows/day; <code>0.05</code> = 5% of that.
+For a given (date, scale, dims) triple the output is <b>identical</b> on every run
+(seed = date).</li>
+<li><b>Dimensions:</b> <code>scale &lt; 1.0</code> is a local-testing convenience — it
+shrinks customers/vehicles/suppliers but changes RNG consumption, so rows differ from the
+full Databricks dataset. Full parity: <code>scale=1.0</code>.</li>
+</ul>
+
+<h3>Determinism &amp; ID blocks</h3>
+<p>The RNG is seeded with the date (<code>seed = YYYYMMDD</code>) and every day owns a
+disjoint 10M ID block per table (<code>ID_START = days_since_2020-01-01 × 10M</code>) —
+IDs never collide across days. Re-generating the same date produces <b>identical rows but
+new files</b> (the duplicates are deliberate exercise material for silver-layer dedup).
+Caveat: <code>fact_payments.transaction_number</code> uses uuid4 and is the one column
+that breaks determinism (known debt, tracked in the journal).</p>
+
+<h3>Data semantics (highlights)</h3>
+<ul>
+<li><code>customer_id = NULL</code> in sales = walk-in customer (~30%, deliberate skew).</li>
+<li><code>work_order_items</code>: sentinel <code>0</code> in the unused service/product FK.</li>
+<li>Dates land in parquet as real <code>date32</code> (not timestamps) — the Delta-table contract.</li>
+</ul>
+
+<h3>Data layout on disk</h3>
+<div class="block">data/
+  dim_landing/&lt;dim_table&gt;/snapshot.parquet
+  fact_files/&lt;fact_table&gt;/[year=…/month=…/]*.parquet</div>
+<p>Inside the container this is the <code>/data</code> volume; locally it is
+<code>./data</code> (git-ignored). The layout mirrors the Databricks volumes.</p>
+
+<h3>API</h3>
+<div class="block">GET  /api/status                          generated tables + row counts
+POST /api/generate/dims?scale=             7 dimensions (seed 42)
+POST /api/generate/day?day=&amp;scale=         one day, 13 fact tables
+POST /api/generate/backfill?start=&amp;end=&amp;scale=   a range of days
+GET  /api/preview/{table}?n=               first n rows as JSON</div>
+
+<h3>Running</h3>
+<div class="block"># Docker (build from the REPO ROOT)
+docker build -f simulator/Dockerfile -t car-workshop-sim .
+docker run -p 8000:1289 -v "$PWD/data:/data" -e HOST_DATA_DIR="$PWD/data" car-workshop-sim
+
+# without Docker
+pip install -r simulator/requirements.txt
+uvicorn simulator.app:app --reload</div>
+</div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+/* ── themes: 10 palettes, live-switched via CSS variables ── */
+const THEMES = {
+  'Midnight':  { bg:'#0d1420', card:'#141d2e', line:'#22304a', txt:'#d7e1ef', dim:'#7f93ad',
+                 accent:'#e8a33d', btnTxt:'#14100a', inputBg:'#0b111c', thBg:'#1a2438',
+                 rowAlt:'#111a2a', ok:'#5fbf77', err:'#e06666', null_:'#556677' },
+  'Graphite':  { bg:'#16181d', card:'#1e2126', line:'#30343b', txt:'#e2e4e8', dim:'#8b909a',
+                 accent:'#6aa2ff', btnTxt:'#0c1015', inputBg:'#101216', thBg:'#242830',
+                 rowAlt:'#1a1d22', ok:'#69c184', err:'#e07070', null_:'#5c626c' },
+  'Ocean':     { bg:'#081c24', card:'#0e2833', line:'#1c4250', txt:'#d4ecf2', dim:'#6fa1af',
+                 accent:'#35c4c8', btnTxt:'#05181c', inputBg:'#061820', thBg:'#123542',
+                 rowAlt:'#0a222c', ok:'#5fc98f', err:'#e57373', null_:'#4d7783' },
+  'Forest':    { bg:'#101b12', card:'#17251a', line:'#28402c', txt:'#dceadd', dim:'#84a289',
+                 accent:'#8fd14f', btnTxt:'#0d1509', inputBg:'#0c150e', thBg:'#1e3122',
+                 rowAlt:'#131f15', ok:'#7ecf6a', err:'#de7360', null_:'#5b7360' },
+  'Violet':    { bg:'#151022', card:'#1e1830', line:'#332a4d', txt:'#e4ddf4', dim:'#9a8fc0',
+                 accent:'#b48cff', btnTxt:'#120c1e', inputBg:'#110c1c', thBg:'#28203f',
+                 rowAlt:'#1a1429', ok:'#6fc98a', err:'#e0708e', null_:'#6a5f8c' },
+  'Ember':     { bg:'#171010', card:'#221717', line:'#3c2626', txt:'#f0e2dc', dim:'#a98d84',
+                 accent:'#ff7a45', btnTxt:'#1a0e07', inputBg:'#120c0c', thBg:'#2e1e1c',
+                 rowAlt:'#1c1313', ok:'#8fbf5f', err:'#ff6b6b', null_:'#7d6158' },
+  'Terminal':  { bg:'#0a0f0a', card:'#101710', line:'#1f3320', txt:'#c8e6c8', dim:'#6c8f6c',
+                 accent:'#33ff66', btnTxt:'#04140a', inputBg:'#070c07', thBg:'#152415',
+                 rowAlt:'#0d130d', ok:'#33ff66', err:'#ff5f5f', null_:'#4a674a' },
+  'Nord':      { bg:'#2e3440', card:'#3b4252', line:'#4c566a', txt:'#eceff4', dim:'#9fa9bc',
+                 accent:'#88c0d0', btnTxt:'#20242d', inputBg:'#272c37', thBg:'#434c5e',
+                 rowAlt:'#353c4a', ok:'#a3be8c', err:'#bf616a', null_:'#707a8c' },
+  'Paper':     { bg:'#f4f1ea', card:'#fffdf7', line:'#ddd6c8', txt:'#2e2a24', dim:'#8a8172',
+                 accent:'#b05e27', btnTxt:'#fff8ef', inputBg:'#f1ece1', thBg:'#ece5d6',
+                 rowAlt:'#f7f4ec', ok:'#3d7a4e', err:'#b03a3a', null_:'#a89e8c' },
+  'Daylight':  { bg:'#f2f5f9', card:'#ffffff', line:'#d8e0ea', txt:'#1f2937', dim:'#64748b',
+                 accent:'#2563eb', btnTxt:'#f5f8ff', inputBg:'#eef2f7', thBg:'#e5ebf3',
+                 rowAlt:'#f6f8fb', ok:'#15803d', err:'#c02626', null_:'#9aa6b5' },
+};
+const VARS = { bg:'--bg', card:'--card', line:'--line', txt:'--txt', dim:'--dim',
+  accent:'--accent', btnTxt:'--btn-txt', inputBg:'--input-bg', thBg:'--th-bg',
+  rowAlt:'--row-alt', ok:'--ok', err:'--err', null_:'--null' };
+
+function applyTheme(name) {
+  const t = THEMES[name] || THEMES.Midnight;
+  for (const [k, cssVar] of Object.entries(VARS))
+    document.documentElement.style.setProperty(cssVar, t[k]);
+  localStorage.setItem('sim-theme', name);
+  $('themeSel').value = name;
+}
+$('themeSel').innerHTML = Object.keys(THEMES).map(n => `<option>${n}</option>`).join('');
+applyTheme(localStorage.getItem('sim-theme') || 'Midnight');
+
+/* ── README modal ── */
+function openReadme() { $('overlay').classList.add('open'); }
+function closeReadme() { $('overlay').classList.remove('open'); }
+function setLang(l) {
+  $('readme-pl').style.display = l === 'pl' ? '' : 'none';
+  $('readme-en').style.display = l === 'en' ? '' : 'none';
+  $('tabPL').classList.toggle('active', l === 'pl');
+  $('tabEN').classList.toggle('active', l === 'en');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeReadme(); });
+
+/* ── open data folder (server-side; inside Docker we can only show the path) ── */
+async function openFolder() {
+  try {
+    const r = await call('POST', '/api/open-folder');
+    if (r.opened) return log(`opened ${r.path}`, 'ok');
+    if (r.path) {
+      try { await navigator.clipboard.writeText(r.path); } catch {}
+      log(`${r.reason}: ${r.path} (copied to clipboard)`, 'ok');
+    } else {
+      log(`${r.reason} - start the container with -e HOST_DATA_DIR="$PWD/data" to see the path here`, 'err');
+    }
+  } catch (e) { log(`open folder failed: ${e.message}`, 'err'); }
+}
+
+/* ── generation & preview ── */
+function log(msg, cls) {
+  $('log').insertAdjacentHTML('afterbegin', `<div class="${cls||''}">${new Date().toLocaleTimeString()}  ${msg}</div>`);
+}
+async function call(method, url) {
+  const r = await fetch(url, { method });
+  const body = await r.json();
+  if (!r.ok) throw new Error(body.detail || r.status);
+  return body;
+}
+async function refreshTables() {
+  const s = await call('GET', '/api/status');
+  const names = Object.keys(s.tables);
+  $('tblSel').innerHTML = names.map(t =>
+    `<option value="${t}">${t} (${s.tables[t].rows.toLocaleString()} rows)</option>`).join('')
+    || '<option value="">— nothing generated yet —</option>';
+}
+async function run(btn, url, label) {
+  $(btn).disabled = true;
+  try {
+    const r = await call('POST', url);
+    const total = r.tables.reduce((a, t) => a + t.rows, 0);
+    log(`${label}: ${total.toLocaleString()} rows in ${r.seconds}s`, 'ok');
+    await refreshTables();
+  } catch (e) { log(`${label} failed: ${e.message}`, 'err'); }
+  $(btn).disabled = false;
+}
+const genDims = () => run('btnDims', `/api/generate/dims?scale=${+$('dimScale').value}`, 'dims');
+const genDay  = () => {
+  const d = $('dayDate').value.trim();
+  run('btnDay', `/api/generate/day?scale=${+$('dayScale').value}${d ? `&day=${d}` : ''}`, `day ${d || '(yesterday)'}`);
+};
+async function genBackfill() {
+  const s = $('bfStart').value.trim(), e = $('bfEnd').value.trim();
+  if (!s || !e) return log('backfill: start and end are required', 'err');
+  $('btnBf').disabled = true;
+  try {
+    const r = await call('POST', `/api/generate/backfill?start=${s}&end=${e}&scale=${+$('bfScale').value}`);
+    log(`backfill ${s}…${e}: ${r.days} days, ${r.rows.toLocaleString()} rows in ${r.seconds}s`, 'ok');
+    await refreshTables();
+  } catch (err) { log(`backfill failed: ${err.message}`, 'err'); }
+  $('btnBf').disabled = false;
+}
+async function preview() {
+  const t = $('tblSel').value;
+  if (!t) return;
+  try {
+    const p = await call('GET', `/api/preview/${t}?n=${+$('prevN').value}`);
+    $('prevMeta').textContent =
+      `${t} — showing ${p.data.length.toLocaleString()} of ${p.total_rows.toLocaleString()} rows`;
+    $('prevBox').innerHTML = `<table><thead><tr>${p.columns.map(c => `<th>${c}</th>`).join('')}</tr></thead>` +
+      `<tbody>${p.data.map(row =>
+        `<tr>${row.map(v => `<td>${v === null ? '<i class="null">NULL</i>'
+          : String(v).replace(/T00:00:00\.000$/, '')}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  } catch (e) { log(`preview failed: ${e.message}`, 'err'); }
+}
+refreshTables();
+</script>
+</body>
+</html>

@@ -35,6 +35,7 @@ run_all.ipynb                orchestrator: setup + daily cycle via %run
 | `infra/` | Azure side of external storage: ADLS Gen2 + UC setup (az-cli walkthrough + SQL) |
 | `terraform/` | the same ADLS/UC chain as code (see `terraform/README.md`) |
 | `scripts/` | CI helpers: notebook syntax check, API smoke test, docs data builder |
+| `simulator/` | portable generator core + local Docker lab (localhost UI, no Spark — see `simulator/README.md`) |
 | `docs/` | interactive manual published via GitHub Pages (built data: `scripts/build_docs_data.py`) |
 | `journal/` | learning journal – one file per day (`YYYY-MM-DD.md`) |
 | `car_workshop_ab/` | Databricks Asset Bundle scaffold (`databricks bundle init`) – DABs learning ground, still contains template sample code |

@@ -21,7 +21,18 @@
       "Bash(sed -n '/<script>/,/<\\\\/script>/p' docs/index.html)",
       "Bash(sed '1d;$d')",
       "Bash(node --check /private/tmp/claude-501/-Users-mateusz-Desktop-git-fake-car-workshop/a45e05e2-c759-4bae-afec-61500f2e6026/scratchpad/docs_inline.js)",
-      "Bash(python3 scripts/api_smoke.py)"
+      "Bash(python3 scripts/api_smoke.py)",
+      "Bash(python3 -m pip install -q faker pyarrow)",
+      "Bash(python3 -c \"import faker, pyarrow, pandas; print\\('faker', faker.VERSION, '| pyarrow', pyarrow.__version__, '| pandas', pandas.__version__\\)\")",
+      "Bash(python3 -m simulator.smoke_test)",
+      "Bash(mktemp -d)",
+      "Bash(CAR_WORKSHOP_DATA=$\\(mktemp -d\\) python3 -)",
+      "Bash(grep -n '| \\\\`' README.md)",
+      "Bash(git check-ignore *)",
+      "Bash(python3 -m py_compile reference_data.py table_schemas.py simulator/*.py)",
+      "Bash(python3 -c \"import yaml; yaml.safe_load\\(open\\('.github/workflows/ci.yaml'\\)\\); print\\('ci.yaml OK'\\)\")",
+      "Bash(docker --version)",
+      "Bash(docker build *)"
     ]
   }
 }

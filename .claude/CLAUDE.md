@@ -50,6 +50,11 @@ Key mechanics that span multiple files:
   `schema_to_ddl()` / `build_spark_schema()`. Must stay in sync with `create_tables.sql`.
 - `reference_data.py` — every dictionary, status list and weight used by generators.
   New option lists belong here, never inline in notebooks.
+- `simulator/dims_generation.py` + `simulator/fact_generation.py` — the actual
+  generation logic; `initial_dims.ipynb` / `daily.ipynb` are thin wrappers around
+  them (widgets + Spark IO only). The same modules power the local Docker lab
+  (`simulator/app.py`, no Spark). Never edit generation logic in the notebooks.
+  Local end-to-end check: `python3 -m simulator.smoke_test` (also runs in CI).
 - Notebooks import these from the same directory (works in Databricks Repos) — the repo
   must land in Databricks as a whole.
 
